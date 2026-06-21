@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { BookOpen, Calendar, MessageSquare, Plus, Send, Trash2, User } from 'lucide-react';
+import { BookOpen, Calendar, MessageSquare, Plus, Send, Trash2, User, ArrowLeft } from 'lucide-react';
 
-export default function TeacherNotices() {
+export default function TeacherNotices({ setActiveTab }) {
   const { notices, addNotice, addCommentToNotice, currentUser } = useStore();
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
@@ -27,7 +27,13 @@ export default function TeacherNotices() {
 
   return (
     <div style={styles.container}>
-      <section style={styles.headerPanel} className="card-solid">
+      <section style={styles.headerPanel} className="card-solid hover-lift">
+        <button 
+          className="home-back-btn animate-pulse-border"
+          onClick={() => setActiveTab('teacher-dashboard')} 
+        >
+          <ArrowLeft size={20} color="var(--primary)" />
+        </button>
         <BookOpen size={24} style={{ color: 'var(--primary)' }} />
         <div>
           <h2>📢 주간 알림장 작성 & 관리</h2>
@@ -38,7 +44,7 @@ export default function TeacherNotices() {
       </section>
 
       {/* Write New Notice Form */}
-      <section style={styles.section} className="card-solid">
+      <section style={styles.section} className="card-solid hover-lift">
         <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Plus size={18} style={{ color: 'var(--primary)' }} />
           <span>새 알림장(공지) 등록</span>
@@ -72,7 +78,19 @@ export default function TeacherNotices() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end' }}>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ 
+              alignSelf: 'flex-end',
+              opacity: (!newTitle.trim() || !newContent.trim()) ? 0.6 : 1,
+              cursor: (!newTitle.trim() || !newContent.trim()) ? 'not-allowed' : 'pointer',
+              background: (!newTitle.trim() || !newContent.trim()) ? 'rgba(16, 185, 129, 0.4)' : 'var(--primary)',
+              border: 'none',
+              boxShadow: (!newTitle.trim() || !newContent.trim()) ? 'none' : 'var(--shadow-sm)',
+            }}
+            disabled={!newTitle.trim() || !newContent.trim()}
+          >
             <Send size={16} />
             <span>알림장 발행하기</span>
           </button>
@@ -84,7 +102,7 @@ export default function TeacherNotices() {
         <h3 style={{ margin: '12px 0 4px 8px' }}>발행된 알림장 목록</h3>
         
         {notices.length === 0 ? (
-          <div style={styles.emptyState} className="card-solid">
+          <div style={styles.emptyState} className="card-solid hover-lift">
             <p>아직 발행된 알림장이 없습니다. 첫 알림장을 등록해 보세요! 📭</p>
           </div>
         ) : (
@@ -140,16 +158,32 @@ export default function TeacherNotices() {
                     value={commentInputs[notice.id] || ''}
                     onChange={(e) => setCommentInputs({ ...commentInputs, [notice.id]: e.target.value })}
                     placeholder="학부모 질문에 답변을 달거나 공지를 남겨주세요..."
-                    style={styles.commentInput}
+                    className="neon-input"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: '12px',
+                      background: 'var(--bg-main)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.9rem',
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleCommentSubmit(notice.id);
                     }}
                   />
                   <button
-                    className="btn btn-primary"
                     onClick={() => handleCommentSubmit(notice.id)}
                     disabled={!(commentInputs[notice.id] || '').trim()}
-                    style={{ padding: '10px 16px' }}
+                    style={{ 
+                      padding: '10px 16px',
+                      background: 'var(--primary)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease',
+                      opacity: (commentInputs[notice.id] || '').trim() ? 1 : 0.5,
+                      cursor: (commentInputs[notice.id] || '').trim() ? 'pointer' : 'default',
+                    }}
                   >
                     <Send size={14} />
                     <span>답변</span>
@@ -174,7 +208,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
-    padding: '16px',
+    padding: '24px 32px',
+    background: 'white',
+    borderRadius: '16px',
   },
   section: {
     padding: '16px',

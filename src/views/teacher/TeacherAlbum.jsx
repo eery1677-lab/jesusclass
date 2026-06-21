@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Camera, Calendar, Plus, Send, Heart, MessageSquare } from 'lucide-react';
+import { Camera, Calendar, Plus, Send, Heart, MessageSquare, ArrowLeft } from 'lucide-react';
 
 const PRESET_IMAGES = [
   {
@@ -13,7 +13,7 @@ const PRESET_IMAGES = [
   },
   {
     name: '🎶 어린이 성가대 찬양 연습',
-    url: 'https://images.unsplash.com/photo-1453733190148-c44698c265f8?auto=format&fit=crop&q=80&w=1000'
+    url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1000'
   },
   {
     name: '🎂 주일학교 친구 생일 축하',
@@ -21,26 +21,77 @@ const PRESET_IMAGES = [
   }
 ];
 
-export default function TeacherAlbum() {
+export default function TeacherAlbum({ setActiveTab }) {
   const { albums, addAlbum, likeAlbum, currentUser } = useStore();
   const [newTitle, setNewTitle] = useState('');
   const [selectedImage, setSelectedImage] = useState(PRESET_IMAGES[0].url);
   const [customImage, setCustomImage] = useState('');
+  const [uploadedImage, setUploadedImage] = useState(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_SIZE = 800; // 사진첩용이므로 프로필보다 좀 더 크게
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setUploadedImage(compressedDataUrl);
+          setCustomImage('');
+          setSelectedImage('');
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreateAlbum = (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const finalImage = customImage.trim() || selectedImage;
+    const finalImage = uploadedImage || customImage.trim() || selectedImage;
     addAlbum(newTitle, finalImage);
     
     setNewTitle('');
     setCustomImage('');
+    setUploadedImage(null);
   };
 
   return (
     <div style={styles.container}>
-      <section style={styles.headerPanel} className="card-solid">
+      <section style={styles.headerPanel} className="card-solid hover-lift">
+        <button 
+          className="home-back-btn animate-pulse-border"
+          onClick={() => setActiveTab('teacher-dashboard')} 
+        >
+          <ArrowLeft size={20} color="var(--primary)" />
+        </button>
         <Camera size={24} style={{ color: 'var(--primary)' }} />
         <div>
           <h2>📸 주일학교 활동 사진 업로드 & 관리</h2>
@@ -51,7 +102,7 @@ export default function TeacherAlbum() {
       </section>
 
       {/* Upload Album Form */}
-      <section style={styles.section} className="card-solid">
+      <section style={styles.section} className="card-solid hover-lift">
         <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Plus size={18} style={{ color: 'var(--primary)' }} />
           <span>새 앨범 등록하기</span>
@@ -80,8 +131,9 @@ export default function TeacherAlbum() {
                   onClick={() => {
                     setSelectedImage(img.url);
                     setCustomImage('');
+                    setUploadedImage(null);
                   }}
-                  style={styles.presetCard(selectedImage === img.url && !customImage)}
+                  style={styles.presetCard(selectedImage === img.url && !customImage && !uploadedImage)}
                 >
                   <img src={img.url} alt={img.name} style={styles.presetThumb} />
                   <div style={styles.presetName}>{img.name}</div>
@@ -91,15 +143,23 @@ export default function TeacherAlbum() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="custom-image-url">또는 직접 이미지 URL 입력 (선택사항)</label>
+            <label className="form-label" htmlFor="custom-image-url">또는 직접 사진 업로드 (추천)</label>
             <input
-              id="custom-image-url"
-              type="text"
-              className="form-input"
-              placeholder="https://example.com/image.jpg"
-              value={customImage}
-              onChange={(e) => setCustomImage(e.target.value)}
+              id="file-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
             />
+            <label htmlFor="file-upload" style={styles.uploadBtn}>
+              <Camera size={18} />
+              {uploadedImage ? '사진 변경하기' : '기기에서 사진 선택'}
+            </label>
+            {uploadedImage && (
+              <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                <img src={uploadedImage} alt="preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }} />
+              </div>
+            )}
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end' }}>
@@ -148,7 +208,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
-    padding: '16px',
+    padding: '24px 32px',
+    background: 'white',
+    borderRadius: '16px',
   },
   section: {
     padding: '16px',
@@ -232,5 +294,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
+  },
+  uploadBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    background: '#F3F4F6',
+    border: '2px dashed #D1D5DB',
+    padding: '16px',
+    borderRadius: '12px',
+    color: '#4B5563',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
   }
 };

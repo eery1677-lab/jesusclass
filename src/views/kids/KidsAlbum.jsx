@@ -103,7 +103,15 @@ export default function KidsAlbum({ setActiveTab }) {
                     <input 
                       type="text" 
                       placeholder="따뜻한 댓글을 남겨주세요..." 
-                      style={styles.commentInput}
+                      className="neon-input"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        width: '100%',
+                        background: 'var(--bg-main)',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                      }}
                       value={commentInputs[album.id] || ''}
                       onChange={(e) => handleCommentChange(album.id, e.target.value)}
                     />
@@ -284,13 +292,14 @@ const styles = {
     width: '36px',
     height: '36px',
     borderRadius: '50%',
-    background: isActive ? 'var(--primary)' : 'var(--bg-main)',
-    border: isActive ? 'none' : '1px solid var(--border-input)',
-    color: isActive ? 'white' : 'var(--text-muted)',
+    background: 'var(--primary)',
+    border: 'none',
+    color: 'white',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: isActive ? 'pointer' : 'default',
+    opacity: isActive ? 1 : 0.5,
     transition: 'all 0.2s',
   })
 };

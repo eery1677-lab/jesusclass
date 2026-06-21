@@ -101,14 +101,29 @@ export default function KidsNotices({ setActiveTab }) {
                     value={commentInputs[notice.id] || ''}
                     onChange={(e) => handleCommentChange(notice.id, e.target.value)}
                     placeholder="알림장 확인 댓글을 작성해 주세요..."
-                    style={styles.commentInput}
+                    className="neon-input"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: '12px',
+                      background: 'var(--bg-main)',
+                      color: 'var(--text-main)',
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleCommentSubmit(notice.id);
                     }}
                   />
                   <button
-                    className="btn btn-primary"
-                    style={styles.sendBtn}
+                    style={{
+                      ...styles.sendBtn,
+                      background: 'var(--primary)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease',
+                      opacity: (commentInputs[notice.id] || '').trim() ? 1 : 0.5,
+                      cursor: (commentInputs[notice.id] || '').trim() ? 'pointer' : 'default',
+                    }}
                     onClick={() => handleCommentSubmit(notice.id)}
                     disabled={!(commentInputs[notice.id] || '').trim()}
                   >

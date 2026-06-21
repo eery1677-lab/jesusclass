@@ -1,25 +1,9 @@
+import { useStore } from '../../store/useStore';
 import { FileText, Download, Share2, Book, ChevronLeft, Music, Mic, BookOpen, User, Coins, MessageCircle, Heart, Bell } from 'lucide-react';
 
 export default function KidsBulletin({ setActiveTab }) {
-  const currentBulletin = {
-    title: '유초등부 주일 주보',
-    date: '2026년 6월 20일',
-    vol: '제 2026-25호',
-    worshipInfo: [
-      { order: '찬양', leader: '찬양팀', icon: Music },
-      { order: '기도', leader: '이하늘 어린이', icon: Mic },
-      { order: '말씀봉독', leader: '다같이 (시편 23:1~6)', icon: BookOpen },
-      { order: '말씀', leader: '김요한 전도사님', icon: User },
-      { order: '헌금', leader: '다같이', icon: Coins },
-      { order: '주기도문', leader: '다같이', icon: MessageCircle }
-    ],
-    announcements: [
-      '다음 주일은 야외 예배로 드립니다. (장소: 시민공원)',
-      '여름 성경학교 등록이 시작되었습니다. (7월 20일~22일)',
-      '성경 읽기표를 다 채운 친구들은 선생님께 제출해 주세요.'
-    ],
-    newFriends: ['김민준 (3학년)', '박서연 (1학년)']
-  };
+  const { bulletins } = useStore();
+  const currentBulletin = bulletins.length > 0 ? bulletins[0] : null;
 
   return (
     <div style={styles.container}>
@@ -38,61 +22,44 @@ export default function KidsBulletin({ setActiveTab }) {
         </div>
       </header>
 
-      <div style={styles.bulletinPaper} className="card-solid">
-        <div style={styles.paperHeader}>
-          <div>
-            <div style={styles.volText}>{currentBulletin.vol}</div>
-            <h1 style={styles.mainTitle}>{currentBulletin.title}</h1>
-            <div style={styles.dateText}>{currentBulletin.date}</div>
-          </div>
-          <Book size={40} color="rgba(0,0,0,0.1)" />
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitleWrapper}>
-            <div style={styles.sectionIcon}><Heart size={16} color="#EC4899" /></div>
-            <h3 style={styles.sectionTitle}>예배 순서</h3>
-          </div>
-          <div style={styles.orderList}>
-            {currentBulletin.worshipInfo.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <div key={idx} style={styles.orderItem}>
-                  <div style={styles.orderLeft}>
-                    <div style={styles.orderItemIcon}><Icon size={14} color="#6B7280" /></div>
-                    <span style={styles.tdOrder}>{item.order}</span>
-                  </div>
-                  <div style={styles.tdLeader}>{item.leader}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitleWrapper}>
-            <div style={styles.sectionIcon}><Bell size={16} color="#3B82F6" /></div>
-            <h3 style={styles.sectionTitle}>교회 소식</h3>
-          </div>
-          <div style={styles.announcementList}>
-            {currentBulletin.announcements.map((text, idx) => (
-              <div key={idx} style={styles.announcementItem}>
-                <div style={styles.bulletPoint}></div>
-                <div style={styles.li}>{text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {currentBulletin.newFriends.length > 0 && (
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>새 친구를 환영해요 🎉</h3>
-            <div style={styles.newFriendsBox}>
-              {currentBulletin.newFriends.join(', ')}
+      {currentBulletin ? (
+        <div style={styles.bulletinPaper} className="card-solid">
+          <div style={styles.paperHeader}>
+            <div>
+              <div style={styles.volText}>최신 발행 주보</div>
+              <h1 style={styles.mainTitle}>{currentBulletin.title}</h1>
+              <div style={styles.dateText}>{currentBulletin.createdAt}</div>
             </div>
+            <Book size={40} color="rgba(0,0,0,0.1)" />
           </div>
-        )}
-      </div>
+
+          {currentBulletin.imageUrl && (
+            <div style={styles.section}>
+              <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                <img src={currentBulletin.imageUrl} alt="주보 이미지" style={{ width: '100%', display: 'block' }} />
+              </div>
+            </div>
+          )}
+
+          {currentBulletin.content && (
+            <div style={styles.section}>
+              <div style={styles.sectionTitleWrapper}>
+                <div style={styles.sectionIcon}><Bell size={16} color="#3B82F6" /></div>
+                <h3 style={styles.sectionTitle}>예배 순서 및 광고</h3>
+              </div>
+              <div style={{...styles.announcementItem, whiteSpace: 'pre-wrap'}}>
+                <div style={styles.li}>{currentBulletin.content}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={styles.bulletinPaper} className="card-solid">
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+            아직 이번 주 주보가 등록되지 않았습니다. 🙏
+          </div>
+        </div>
+      )}
 
       <div style={styles.actionButtons}>
         <button className="btn" style={styles.actionBtn}>

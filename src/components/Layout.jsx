@@ -12,13 +12,21 @@ import {
   HelpCircle,
   ChevronRight,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Phone,
+  Mail,
+  X
 } from 'lucide-react';
+import ProfileEditModal from './ProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, switchUser, churchName } = useStore();
+  const { currentUser, switchUser, churchName, churchContact, students } = useStore();
+  const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   // 메뉴 리스트
   const tabs = currentUser.role === 'teacher' 
@@ -58,7 +66,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
           >
             <Icon 
               size={24} 
-              style={{ color: isActive ? 'var(--primary)' : 'var(--text-light)', marginBottom: '4px' }} 
+              style={{ color: isActive ? '#111827' : '#9CA3AF', marginBottom: '4px' }} 
             />
             <span style={styles.navTabLabel(isActive)}>{tab.label}</span>
           </button>
@@ -97,20 +105,26 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                 onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
                 className="neon-logo-box hover-lift clickable-item"
               >
-                <div style={styles.avatarMini}>{currentUser.role === 'teacher' ? '👩‍🏫' : '👦'}</div>
+                <div style={{...styles.avatarMini, overflow: 'hidden'}}>
+                  {currentStudent?.imageUrl ? (
+                    <img src={currentStudent.imageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    currentStudent?.avatar || (currentUser.role === 'teacher' ? '👩‍🏫' : '👦')
+                  )}
+                </div>
                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{currentUser.name}</span>
               </button>
               
               {isRoleMenuOpen && (
                 <div style={styles.roleDropdown} className="card-solid animate-fade-in">
                   <div style={styles.dropdownHeader}>계정 전환 (데모)</div>
-                  <button style={styles.dropdownItem} onClick={() => { switchUser('student', 'student1'); setIsRoleMenuOpen(false); }}>
+                  <button style={styles.dropdownItem} onClick={() => { switchUser('student', 'student1'); setActiveTab('kids-dashboard'); setIsRoleMenuOpen(false); }}>
                     👦 학생1 (김예찬)
                   </button>
-                  <button style={styles.dropdownItem} onClick={() => { switchUser('student', 'student2'); setIsRoleMenuOpen(false); }}>
+                  <button style={styles.dropdownItem} onClick={() => { switchUser('student', 'student2'); setActiveTab('kids-dashboard'); setIsRoleMenuOpen(false); }}>
                     👧 학생2 (이주은)
                   </button>
-                  <button style={styles.dropdownItem} onClick={() => { switchUser('teacher', 'teacher1'); setIsRoleMenuOpen(false); }}>
+                  <button style={styles.dropdownItem} onClick={() => { switchUser('teacher', 'teacher1'); setActiveTab('teacher-dashboard'); setIsRoleMenuOpen(false); }}>
                     👩‍🏫 교사 (박사랑)
                   </button>
                 </div>
@@ -136,14 +150,20 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                 <button style={styles.closeBtn} onClick={() => setIsMoreMenuOpen(false)}>✕</button>
               </div>
               <div style={styles.moreProfileCard}>
-                <div style={styles.moreAvatar}>{currentUser.role === 'teacher' ? '👩‍🏫' : '👦'}</div>
+                <div style={{...styles.moreAvatar, overflow: 'hidden'}}>
+                  {currentStudent?.imageUrl ? (
+                    <img src={currentStudent.imageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    currentStudent?.avatar || (currentUser.role === 'teacher' ? '👩‍🏫' : '👦')
+                  )}
+                </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{currentUser.name} {currentUser.role === 'teacher' ? '선생님' : '어린이'}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{currentUser.role === 'teacher' ? '유초등부 교사' : '유초등부 3학년'}</div>
                 </div>
               </div>
               <div style={styles.moreMenuList}>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => alert('프로필 관리 기능은 준비중입니다.')}>
+                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => setIsProfileModalOpen(true)}>
                   <div style={styles.moreMenuIconWrapper}><User size={18} color="#4F46E5" /></div>
                   <span style={styles.moreMenuText}>내 프로필 관리</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
@@ -153,24 +173,74 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                   <span style={styles.moreMenuText}>앱 설정 / 알림</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => alert('이용약관 및 개인정보 처리방침입니다.')}>
-                  <div style={styles.moreMenuIconWrapper}><ShieldCheck size={18} color="#F59E0B" /></div>
-                  <span style={styles.moreMenuText}>이용약관 및 개인정보 처리방침</span>
-                  <ChevronRight size={18} color="var(--text-muted)" />
-                </button>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => alert('📞 교회 사무실: 02-123-4567\n🏢 주소: 서울특별시 은혜구 축복로 100\n📧 이메일: jesusclass@church.com')}>
+                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => setIsContactModalOpen(true)}>
                   <div style={styles.moreMenuIconWrapper}><HelpCircle size={18} color="#3B82F6" /></div>
                   <span style={styles.moreMenuText}>교회 연락처 및 오시는 길</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
               </div>
-              <button style={styles.logoutBtn} onClick={() => alert('로그아웃 되었습니다.')}>
+              <button style={styles.logoutBtn} onClick={() => { 
+                if (window.confirm('정말 로그아웃 하시겠습니까?')) {
+                  switchUser(null);
+                  setIsMoreMenuOpen(false);
+                }
+              }}>
                 <LogOut size={18} />
                 로그아웃
               </button>
             </div>
           </div>
         )}
+        
+        {/* 연락처 및 오시는 길 모달 */}
+        {isContactModalOpen && (
+          <div style={styles.moreBackdrop} onClick={() => setIsContactModalOpen(false)}>
+            <div style={styles.contactModal} onClick={(e) => e.stopPropagation()} className="animate-fade-up">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.2rem' }}>교회 연락처 및 오시는 길</h2>
+                <button onClick={() => setIsContactModalOpen(false)} style={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}><Phone size={20} color="#10B981" /></div>
+                  <div>
+                    <div style={styles.contactLabel}>교회 사무실</div>
+                    <div style={styles.contactValue}>{churchContact?.phone || '등록된 번호가 없습니다.'}</div>
+                  </div>
+                </div>
+                
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}><MapPin size={20} color="#F59E0B" /></div>
+                  <div>
+                    <div style={styles.contactLabel}>오시는 길</div>
+                    <div style={{...styles.contactValue, whiteSpace: 'pre-line'}}>{churchContact?.address || '등록된 주소가 없습니다.'}</div>
+                  </div>
+                </div>
+                
+                <div style={styles.contactItem}>
+                  <div style={styles.contactIcon}><Mail size={20} color="#3B82F6" /></div>
+                  <div>
+                    <div style={styles.contactLabel}>이메일 문의</div>
+                    <div style={styles.contactValue}>{churchContact?.email || '등록된 이메일이 없습니다.'}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <button style={styles.contactCloseBtn} onClick={() => setIsContactModalOpen(false)}>
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 프로필 수정 모달 */}
+        <ProfileEditModal 
+          isOpen={isProfileModalOpen} 
+          onClose={() => setIsProfileModalOpen(false)} 
+        />
       </div>
     </div>
   );
@@ -305,15 +375,14 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'transparent',
     cursor: 'pointer',
     padding: '6px 0',
     WebkitTapHighlightColor: 'transparent',
   },
   navTabLabel: (isActive) => ({
     fontSize: '0.65rem',
-    fontWeight: isActive ? 700 : 500,
-    color: isActive ? 'var(--primary)' : 'var(--text-light)',
+    fontWeight: isActive ? 800 : 500,
+    color: isActive ? '#111827' : '#9CA3AF',
   }),
   moreBackdrop: {
     position: 'fixed',
@@ -405,9 +474,60 @@ const styles = {
     background: '#FEF2F2',
     color: '#EF4444',
     border: 'none',
-    borderRadius: '12px',
+    borderRadius: '16px',
     fontSize: '1rem',
     fontWeight: 700,
+    cursor: 'pointer',
+  },
+  contactModal: {
+    background: 'var(--bg-card)',
+    borderRadius: '24px',
+    padding: '24px',
+    width: '90%',
+    maxWidth: '400px',
+    margin: 'auto',
+    boxShadow: 'var(--shadow-lg)',
+  },
+  contactItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '16px',
+    background: 'var(--bg-main)',
+    borderRadius: '16px',
+  },
+  contactIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    background: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: 'var(--shadow-sm)',
+  },
+  contactLabel: {
+    fontSize: '0.85rem',
+    color: 'var(--text-muted)',
+    fontWeight: 600,
+    marginBottom: '2px',
+  },
+  contactValue: {
+    fontSize: '1rem',
+    fontWeight: 700,
+    color: 'var(--text-main)',
+    lineHeight: '1.4',
+  },
+  contactCloseBtn: {
+    width: '100%',
+    padding: '14px',
+    background: 'var(--primary)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '1.05rem',
+    fontWeight: 700,
+    marginTop: '24px',
     cursor: 'pointer',
   }
 };

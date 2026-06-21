@@ -1,0 +1,199 @@
+import React, { useState } from 'react';
+import { useStore } from '../../store/useStore';
+import { CheckSquare, Calendar as CalendarIcon, User, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
+
+export default function TeacherAttendance({ setActiveTab }) {
+  const { students, updateStudentDalant } = useStore();
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // 가상의 출석 상태 관리를 위한 로컬 상태 (실제 앱에서는 useStore의 각 학생별 출결 배열에 저장해야 함)
+  const [attendanceRecords, setAttendanceRecords] = useState({});
+
+  const handleAttendanceChange = (studentId, status) => {
+    const key = `${selectedDate}_${studentId}`;
+    setAttendanceRecords(prev => ({
+      ...prev,
+      [key]: status
+    }));
+
+    // 출석(present)일 경우 1달란트 자동 지급 (데모용 로직)
+    if (status === 'present') {
+      updateStudentDalant(studentId, 1, '주일예배 출석');
+    } else if (status === 'absent' || status === 'late') {
+      // 기존 출석을 취소하고 결석/지각으로 변경한 경우 달란트 회수(선택적)
+      // 여기서는 복잡도를 줄이기 위해 생략
+    }
+  };
+
+  const getStatus = (studentId) => {
+    return attendanceRecords[`${selectedDate}_${studentId}`] || 'none';
+  };
+
+  return (
+    <div style={styles.container}>
+      <section style={styles.headerPanel} className="card-solid hover-lift">
+        <button 
+          className="home-back-btn animate-pulse-border"
+          onClick={() => setActiveTab('teacher-dashboard')} 
+        >
+          <ArrowLeft size={20} color="var(--primary)" />
+        </button>
+        <CheckSquare size={24} style={{ color: 'var(--primary)' }} />
+        <div>
+          <h2>우리 반 출결 관리</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            예배 출석, 지각, 결석을 체크하고 출석 시 자동으로 달란트를 지급하세요.
+          </p>
+        </div>
+      </section>
+
+      <div style={styles.datePickerCard} className="card-solid hover-lift">
+        <label style={styles.dateLabel} htmlFor="date-select">
+          <CalendarIcon size={18} />
+          <span>날짜 선택</span>
+        </label>
+        <input 
+          id="date-select"
+          type="date" 
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={styles.dateInput}
+        />
+      </div>
+
+      <div style={styles.listContainer}>
+        {students.map(student => {
+          const status = getStatus(student.id);
+          return (
+            <div key={student.id} style={styles.studentCard} className="card-solid hover-lift">
+              <div style={styles.studentInfo}>
+                <div style={styles.avatarMini}>{student.avatar || '👦'}</div>
+                <div>
+                  <div style={styles.studentName}>{student.name}</div>
+                  <div style={styles.studentMeta}>누적 출석: {student.attendanceCount}회</div>
+                </div>
+              </div>
+              
+              <div style={styles.actionGroup}>
+                <button 
+                  style={{...styles.actionBtn, background: status === 'present' ? '#10B981' : '#F3F4F6', color: status === 'present' ? 'white' : 'var(--text-muted)'}}
+                  onClick={() => handleAttendanceChange(student.id, 'present')}
+                >
+                  <CheckCircle size={16} />
+                  출석
+                </button>
+                <button 
+                  style={{...styles.actionBtn, background: status === 'late' ? '#F59E0B' : '#F3F4F6', color: status === 'late' ? 'white' : 'var(--text-muted)'}}
+                  onClick={() => handleAttendanceChange(student.id, 'late')}
+                >
+                  <Clock size={16} />
+                  지각
+                </button>
+                <button 
+                  style={{...styles.actionBtn, background: status === 'absent' ? '#EF4444' : '#F3F4F6', color: status === 'absent' ? 'white' : 'var(--text-muted)'}}
+                  onClick={() => handleAttendanceChange(student.id, 'absent')}
+                >
+                  <XCircle size={16} />
+                  결석
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    paddingBottom: '80px',
+  },
+  headerPanel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #ECFDF5 0%, #ffffff 100%)',
+    borderLeft: '4px solid #10B981',
+  },
+  datePickerCard: {
+    padding: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+  },
+  dateLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontWeight: 600,
+    color: 'var(--text-main)',
+  },
+  dateInput: {
+    padding: '10px 14px',
+    borderRadius: '12px',
+    border: '1px solid var(--border-light)',
+    fontSize: '1rem',
+    fontFamily: 'inherit',
+    outline: 'none',
+    width: '180px',
+  },
+  listContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  studentCard: {
+    padding: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '16px',
+  },
+  studentInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  avatarMini: {
+    width: '42px',
+    height: '42px',
+    borderRadius: '50%',
+    background: 'var(--bg-app)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+  },
+  studentName: {
+    fontWeight: 700,
+    fontSize: '1.05rem',
+  },
+  studentMeta: {
+    fontSize: '0.8rem',
+    color: 'var(--text-muted)',
+    marginTop: '2px',
+  },
+  actionGroup: {
+    display: 'flex',
+    gap: '8px',
+  },
+  actionBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    border: 'none',
+    fontWeight: 600,
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  }
+};

@@ -12,6 +12,9 @@ import KidsBulletin from './views/kids/KidsBulletin';
 import TeacherDashboard from './views/teacher/TeacherDashboard';
 import TeacherNotices from './views/teacher/TeacherNotices';
 import TeacherAlbum from './views/teacher/TeacherAlbum';
+import TeacherAttendance from './views/teacher/TeacherAttendance';
+import TeacherDalant from './views/teacher/TeacherDalant';
+import TeacherBulletin from './views/teacher/TeacherBulletin';
 import ChatModal from './components/ChatModal';
 import ProfileEditModal from './components/ProfileEditModal';
 import SettingsView from './views/Settings';
@@ -19,7 +22,7 @@ import { useStore } from './store/useStore';
 
 export default function App() {
   const { currentUser } = useStore();
-  const [activeTab, setActiveTab] = useState('kids-dashboard');
+  const [activeTab, setActiveTab] = useState(currentUser?.role === 'teacher' ? 'teacher-dashboard' : 'kids-dashboard');
   const [chatOpen, setChatOpen] = useState(false);
 
   // 현재 활성화된 탭에 맞춰서 뷰를 반환
@@ -47,11 +50,17 @@ export default function App() {
       
       // 교사 모드 뷰
       case 'teacher-dashboard':
-        return <TeacherDashboard />;
+        return <TeacherDashboard setActiveTab={setActiveTab} />;
       case 'teacher-notices':
-        return <TeacherNotices />;
+        return <TeacherNotices setActiveTab={setActiveTab} />;
       case 'teacher-album':
-        return <TeacherAlbum />;
+        return <TeacherAlbum setActiveTab={setActiveTab} />;
+      case 'teacher-attendance':
+        return <TeacherAttendance setActiveTab={setActiveTab} />;
+      case 'teacher-dalant':
+        return <TeacherDalant setActiveTab={setActiveTab} />;
+      case 'teacher-bulletin':
+        return <TeacherBulletin setActiveTab={setActiveTab} />;
       
       // 설정 뷰
       case 'settings':

@@ -18,10 +18,16 @@ export default function ChatModal({ isOpen, onClose }) {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const emojis = ['😀', '😂', '😍', '🙏', '👍', '👏', '💖', '🎉', '🔥', '✨'];
+  const emojis = [
+    '😀', '😂', '😍', '🥰', '😎', '😇', '🤔', '😊', '😉', '🤣',
+    '🙏', '👍', '👏', '🙌', '💪', '🤝', '✌️', '👌', '🤞', '☝️',
+    '💖', '❤️', '💕', '🎉', '🔥', '✨', '🌟', '🌈', '🎁', '🎈',
+    '⛪', '✝️', '🕊️', '📖', '🎵'
+  ];
 
   const handleEmojiClick = (emoji) => {
     setInputText(prev => prev + emoji);
@@ -107,8 +113,18 @@ export default function ChatModal({ isOpen, onClose }) {
     if (file) {
       const senderId = currentUser.role === 'teacher' ? 'teacher1' : currentUser.id;
       const senderName = currentUser.name;
-      // Send a fake image/file message
-      sendMessage(activeChatStudentId, senderId, senderName, `[파일 첨부됨: ${file.name}]`, null);
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageUrl = event.target.result;
+          sendMessage(activeChatStudentId, senderId, senderName, `[사진 첨부됨: ${file.name}]`, null, imageUrl);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        sendMessage(activeChatStudentId, senderId, senderName, `[파일 첨부됨: ${file.name}]`, null);
+      }
+      
       // reset file input
       e.target.value = null;
     }
@@ -269,13 +285,13 @@ export default function ChatModal({ isOpen, onClose }) {
                     }
 
                     // 시간 포맷 (오전 08:52)
-                    const dateObj = new Date(msg.timestamp.replace(' ', 'T'));
+                    const dateObj = new Date(msg.timestamp);
                     let hours = dateObj.getHours();
                     const minutes = dateObj.getMinutes().toString().padStart(2, '0');
                     const ampm = hours >= 12 ? '오후' : '오전';
                     hours = hours % 12;
                     hours = hours ? hours : 12;
-                    const timeString = `${ampm} ${hours.toString().padStart(2, '0')}:${minutes}`;
+                    const timeString = isNaN(hours) ? '방금 전' : `${ampm} ${hours.toString().padStart(2, '0')}:${minutes}`;
                     
                     return (
                       <React.Fragment key={msg.id}>
@@ -316,6 +332,9 @@ export default function ChatModal({ isOpen, onClose }) {
                                   <Clock size={12} /> 예약 전송 대기 중 ({new Date(msg.scheduledFor).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
                                 </div>
                               )}
+                              {msg.imageUrl && (
+                                <img src={msg.imageUrl} alt="첨부 이미지" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', display: 'block' }} />
+                              )}
                               {msg.content}
                             </div>
 
@@ -351,7 +370,14 @@ export default function ChatModal({ isOpen, onClose }) {
             )}
             
             <div style={styles.inputAreaWrapper}>
-              <form onSubmit={handleSend} style={styles.inputForm} className="neon-input-container">
+              <form 
+                onSubmit={handleSend} 
+                style={{
+                  ...styles.inputForm,
+                  background: isInputFocused ? 'var(--bg-card)' : 'var(--bg-app)',
+                }} 
+                className="neon-input-container"
+              >
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -374,6 +400,8 @@ export default function ChatModal({ isOpen, onClose }) {
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="메시지를 입력해주세요."
                     style={styles.input}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                   />
                 </div>
 
@@ -438,7 +466,7 @@ const styles = {
     maxHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
-    borderRadius: '0',
+    borderRadius: '24px',
     overflow: 'hidden',
     background: 'var(--bg-card)',
   },
@@ -738,9 +766,11 @@ const styles = {
     background: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     borderRadius: 'var(--radius-md)',
-    padding: '8px',
+    padding: '12px',
     display: 'flex',
-    gap: '6px',
+    flexWrap: 'wrap',
+    width: '260px',
+    gap: '8px',
     boxShadow: 'var(--shadow-md)',
     zIndex: 10,
   },

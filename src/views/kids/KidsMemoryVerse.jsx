@@ -3,7 +3,7 @@ import { BookOpen, Mic, Send, Play, CheckCircle, ChevronLeft } from 'lucide-reac
 import { useStore } from '../../store/useStore';
 
 export default function KidsMemoryVerse({ setActiveTab }) {
-  const { currentUser, students, submitMission } = useStore();
+  const { currentUser, students, submitMission, rejectMission } = useStore();
   const [verseText, setVerseText] = useState('');
   const [inputMode, setInputMode] = useState('text'); // 'text' | 'voice'
   const [isRecording, setIsRecording] = useState(false);
@@ -91,7 +91,25 @@ export default function KidsMemoryVerse({ setActiveTab }) {
           <div style={styles.statusBox('warning')}>
             <div className="animate-pulse-soft" style={{ fontSize: '1.5rem' }}>⏳</div>
             <div style={{ fontWeight: 600 }}>선생님이 확인하고 있어요.</div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>확인이 완료되면 달란트가 지급됩니다.</p>
+            <p style={{ margin: '4px 0 12px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>확인이 완료되면 달란트가 지급됩니다.</p>
+            <button 
+              className="btn hover-lift" 
+              style={{ 
+                padding: '8px 16px', 
+                fontSize: '0.85rem', 
+                background: 'rgba(239, 68, 68, 0.1)', 
+                color: '#EF4444',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 700
+              }}
+              onClick={() => {
+                setVerseText(student.dailyMissions.bible.textContent || '');
+                rejectMission(student.id, 'bible');
+              }}
+            >
+              제출 취소하고 수정하기
+            </button>
           </div>
         ) : (
           <div>
@@ -125,8 +143,16 @@ export default function KidsMemoryVerse({ setActiveTab }) {
                 
                 <button 
                   type="submit" 
-                  className="btn btn-primary" 
-                  style={styles.submitBtn}
+                  style={{
+                    ...styles.submitBtn,
+                    background: 'var(--primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
+                    opacity: verseText.trim() ? 1 : 0.5,
+                    cursor: verseText.trim() ? 'pointer' : 'default',
+                  }}
                   disabled={!verseText.trim()}
                 >
                   <Send size={18} /> 제출하기

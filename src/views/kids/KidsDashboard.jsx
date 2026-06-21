@@ -22,7 +22,7 @@ import {
 import ProfileEditModal from '../../components/ProfileEditModal';
 
 export default function KidsDashboard({ setActiveTab }) {
-  const { currentUser, students, submitMission, churchName } = useStore();
+  const { currentUser, students, submitMission, rejectMission, churchName } = useStore();
   const [bibleText, setBibleText] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -104,10 +104,10 @@ export default function KidsDashboard({ setActiveTab }) {
             </div>
           </section>
 
-          {/* 2. 편리한 서비스 (8그리드 퀵 메뉴) */}
+          {/* 2. 우리들 이야기 (8그리드 퀵 메뉴) */}
           <section style={styles.sectionContainer}>
             <div style={styles.sectionTitle}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>편리한 서비스</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>우리들 이야기</h3>
             </div>
             <div style={styles.quickMenuGrid}>
               {quickMenuItems.map(item => {
@@ -134,7 +134,7 @@ export default function KidsDashboard({ setActiveTab }) {
         <div style={styles.column}>
           {/* 출결 리마인더 */}
           {student.dailyMissions.attendance.status === 'none' && (
-            <div style={styles.reminderCard} className="hover-lift">
+            <div style={styles.reminderCard} className="card-solid hover-lift">
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={styles.reminderIcon} className="animate-pulse-soft"><CheckCircle size={22} color="white" /></div>
                 <div>
@@ -197,17 +197,51 @@ export default function KidsDashboard({ setActiveTab }) {
                       style={{ minHeight: '90px' }}
                     />
                     <button 
-                      className="btn btn-primary" 
                       disabled={!bibleText.trim()}
                       onClick={() => handleMissionSubmit('bible', bibleText)}
-                      style={{ alignSelf: 'flex-end', marginTop: '12px' }}
+                      style={{ 
+                        alignSelf: 'flex-end', 
+                        marginTop: '12px',
+                        padding: '10px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'var(--primary)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s ease',
+                        opacity: bibleText.trim() ? 1 : 0.5,
+                        cursor: bibleText.trim() ? 'pointer' : 'default',
+                      }}
                     >
                       <Send size={16} /> <span>제출하기</span>
                     </button>
                   </div>
                 )}
                 {student.dailyMissions.bible.status === 'pending' && (
-                  <div style={styles.pendingBadge}>⏳ 선생님 암송 승인 대기 중</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={styles.pendingBadge}>⏳ 선생님 암송 승인 대기 중</div>
+                    <button 
+                      className="btn hover-lift" 
+                      style={{ 
+                        alignSelf: 'flex-end', 
+                        padding: '8px 16px', 
+                        fontSize: '0.85rem', 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        color: '#EF4444',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontWeight: 700
+                      }}
+                      onClick={() => {
+                        setBibleText(student.dailyMissions.bible.textContent || '');
+                        rejectMission(student.id, 'bible');
+                      }}
+                    >
+                      제출 취소하고 수정하기
+                    </button>
+                  </div>
                 )}
                 {student.dailyMissions.bible.status === 'completed' && (
                   <div style={styles.completedBadge}><Check size={16} strokeWidth={3} /> 암송 완료! (+2)</div>
@@ -480,10 +514,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '16px 20px',
-    backgroundColor: 'white',
     color: 'var(--text-main)',
-    borderRadius: 'var(--radius-md)',
-    boxShadow: 'var(--shadow-hover)',
   },
   reminderIcon: {
     width: '40px',

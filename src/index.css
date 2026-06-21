@@ -208,30 +208,26 @@ button, a {
 
 /* Neon Focus Animation for Inputs */
 .neon-input {
-  transition: all 0.3s ease;
-  border: 1.5px solid var(--border-input) !important;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border-input) !important;
   border-radius: 16px;
   box-sizing: border-box;
 }
 .neon-input:focus {
   outline: none;
   border-color: #10B981 !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important;
-  transform: translateY(-1px);
   background: var(--bg-card) !important;
 }
 
 .neon-input-container {
-  transition: all 0.3s ease;
-  border: 1.5px solid var(--border-input) !important;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border-input) !important;
   border-radius: 24px !important;
   box-sizing: border-box;
 }
 .neon-input-container:focus-within {
   outline: none;
   border-color: #10B981 !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important;
-  transform: translateY(-1px);
 }
 
 /* Service Icon & Clickable Items Focus Effect */
@@ -271,11 +267,14 @@ button, a {
   transition: all 0.2s ease;
   border-radius: 16px;
   margin: 0 4px;
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  background: var(--bg-card);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.06);
+  animation: neon-breathe 3s infinite ease-in-out;
 }
 .nav-item.active {
-  background: rgba(16, 185, 129, 0.15); /* light green background */
-  color: #10B981 !important;
-  transform: scale(0.95);
+  /* 테두리와 배경은 동일하게 유지하며, 활성화 시 아주 살짝 꿀렁이는 효과만 제공 */
+  transform: scale(0.96);
 }
 
 /* Clickable List Item Effect */
@@ -296,6 +295,7 @@ button, a {
 }
 
 /* App Logo Font */
+/* App Logo Font */
 .logo-text {
   font-family: 'Fredoka', sans-serif;
   letter-spacing: -0.02em;
@@ -303,3 +303,39 @@ button, a {
 
 input, textarea { min-width: 0; max-width: 100%; }
 * { word-break: break-word; overflow-wrap: break-word; }
+
+/* Soft Glow Animation for Borders */
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.2), inset 0 0 5px rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 1);
+  }
+}
+
+.animate-pulse-border {
+  animation: soft-glow 2s infinite ease-in-out !important;
+  border-color: #10B981 !important;
+}
+
+.selected-student-card {
+  animation: soft-glow 2s infinite ease-in-out !important;
+  border-color: #10B981 !important;
+}
+
+.home-back-btn {
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+}

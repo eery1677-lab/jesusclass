@@ -124,6 +124,17 @@ const initialMessages = [
   }
 ];
 
+const initialBulletins = [
+  {
+    id: 1,
+    title: '6월 3주차 주일학교 주보',
+    content: '1. 사도신경\n2. 찬양 (예수 사랑하심은)\n3. 대표기도 (이주은 어린이)\n4. 말씀 (마태복음 5장 13-16절)\n5. 헌금 및 주기도문',
+    imageUrl: null,
+    writer: '박사랑 선생님',
+    createdAt: '2026-06-20',
+  }
+];
+
 // 로컬스토리지 복원 헬퍼
 const getLocalStorage = (key, initial) => {
   try {
@@ -156,16 +167,27 @@ export const useStore = create((set, get) => ({
   }),
   
   churchName: getLocalStorage('jc_church_name', '양정교회'),
+  churchContact: getLocalStorage('jc_church_contact', {
+    phone: '02-123-4567',
+    address: '서울특별시 은혜구 축복로 100\n지저스빌딩 3층',
+    email: 'jesusclass@church.com'
+  }),
 
   students: getLocalStorage('jc_students', initialStudents),
   notices: getLocalStorage('jc_notices', initialNotices),
   albums: getLocalStorage('jc_albums', initialAlbums),
   messages: getLocalStorage('jc_messages', initialMessages),
+  bulletins: getLocalStorage('jc_bulletins', initialBulletins),
   
   // 설정 업데이트
   updateChurchName: (name) => {
     set({ churchName: name });
     setLocalStorage('jc_church_name', name);
+  },
+
+  updateChurchContact: (contact) => {
+    set({ churchContact: contact });
+    setLocalStorage('jc_church_contact', contact);
   },
 
   // 교사 설정 업데이트
@@ -406,7 +428,7 @@ export const useStore = create((set, get) => ({
   },
   
   // 10. 1:1 톡 메시지 발송
-  sendMessage: (studentId, senderId, senderName, content, scheduledFor = null) => {
+  sendMessage: (studentId, senderId, senderName, content, scheduledFor = null, imageUrl = null) => {
     const newMsg = {
       id: Date.now(),
       studentId,
@@ -415,6 +437,7 @@ export const useStore = create((set, get) => ({
       content,
       isRead: false,
       scheduledFor, // 예약 발송 시간
+      imageUrl, // 첨부된 이미지 URL
       timestamp: new Date().toLocaleString()
     };
     
@@ -438,5 +461,30 @@ export const useStore = create((set, get) => ({
     });
     set({ messages: updatedMessages });
     setLocalStorage('jc_messages', updatedMessages);
+  },
+
+  // 12. 주보 관리
+  addBulletin: (title, content, imageUrl = null) => {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    const newBulletin = {
+      id: Date.now(),
+      title,
+      content,
+      imageUrl,
+      writer: get().currentUser?.name || '선생님',
+      createdAt: formattedDate,
+    };
+    
+    const updatedBulletins = [newBulletin, ...get().bulletins];
+    set({ bulletins: updatedBulletins });
+    setLocalStorage('jc_bulletins', updatedBulletins);
+  },
+
+  deleteBulletin: (id) => {
+    const updatedBulletins = get().bulletins.filter(b => b.id !== id);
+    set({ bulletins: updatedBulletins });
+    setLocalStorage('jc_bulletins', updatedBulletins);
   }
 }));

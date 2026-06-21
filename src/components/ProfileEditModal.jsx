@@ -41,10 +41,43 @@ export default function ProfileEditModal({ isOpen, onClose }) {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result);
-        setAvatar('');
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // 최대 크기를 300px로 제한
+          const MAX_SIZE = 300;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // JPEG 형식으로 압축 (품질 0.8)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setImageUrl(dataUrl);
+          setAvatar('');
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }

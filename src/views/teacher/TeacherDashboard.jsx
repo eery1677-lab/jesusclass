@@ -8,19 +8,41 @@ import {
   ChevronRight,
   TrendingUp,
   Clock,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react';
 
-export default function TeacherDashboard() {
-  const { currentUser, students } = useStore();
+export default function TeacherDashboard({ setActiveTab }) {
+  const { currentUser, students, approveMission, rejectMission } = useStore();
   const teacherName = currentUser.name || "선생님";
+  const [selectedMission, setSelectedMission] = React.useState(null);
   
+  // 미결재 미션 추출
+  const pendingMissions = students.flatMap(student => 
+    Object.entries(student.dailyMissions || {})
+      .filter(([type, mission]) => mission.status === 'pending')
+      .map(([type, mission]) => ({ student, type, mission }))
+  ).sort((a, b) => new Date(b.mission.submittedAt) - new Date(a.mission.submittedAt));
+
   const quickMenuItems = [
-    { id: 'attendance', label: '출결관리', icon: CheckSquare, color: '#10B981', bg: '#D1FAE5' },
-    { id: 'dalant', label: '달란트지급', icon: TrendingUp, color: '#F59E0B', bg: '#FEF3C7' },
-    { id: 'message', label: '단체메시지', icon: MessageSquare, color: '#3B82F6', bg: '#DBEAFE' },
-    { id: 'schedule', label: '일정관리', icon: Calendar, color: '#7B3DFF', bg: '#F3E8FF' }, 
+    { id: 'attendance', label: '출결관리', icon: CheckSquare, color: '#10B981', bg: '#D1FAE5', tab: 'teacher-attendance' },
+    { id: 'dalant', label: '달란트지급', icon: TrendingUp, color: '#F59E0B', bg: '#FEF3C7', tab: 'teacher-dalant' },
+    { id: 'message', label: '가정통신문', icon: MessageSquare, color: '#3B82F6', bg: '#DBEAFE', tab: 'teacher-notices' },
+    { id: 'album', label: '사진첩', icon: Sparkles, color: '#EC4899', bg: '#FCE7F3', tab: 'teacher-album' }, 
+    { id: 'bulletin', label: '모바일주보', icon: FileText, color: '#8B5CF6', bg: '#EDE9FE', tab: 'teacher-bulletin' },
   ];
+
+  const handleApprove = (studentId, type) => {
+    approveMission(studentId, type);
+    setSelectedMission(null);
+  };
+
+  const handleReject = (studentId, type) => {
+    if (window.confirm('이 미션을 반려하시겠습니까?')) {
+      rejectMission(studentId, type);
+      setSelectedMission(null);
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -32,12 +54,15 @@ export default function TeacherDashboard() {
           <section style={styles.profileSection} className="card-solid hover-lift">
             <div style={styles.profileHeader}>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>교사 대시보드</h3>
-              <span style={styles.profileEditBtn}>내 정보 <ChevronRight size={16} /></span>
             </div>
             
             <div style={styles.profileContent}>
-              <div style={styles.avatarCircle} className="animate-pulse-soft">
-                <span style={styles.avatarEmoji}>👩‍🏫</span>
+              <div style={{...styles.avatarCircle, overflow: 'hidden'}} className="animate-pulse-soft">
+                {currentUser.imageUrl ? (
+                  <img src={currentUser.imageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                ) : (
+                  <span style={styles.avatarEmoji}>{currentUser.avatar || '👩‍🏫'}</span>
+                )}
               </div>
               
               <div style={styles.profileInfo}>
@@ -64,8 +89,8 @@ export default function TeacherDashboard() {
             <div style={styles.statCard} className="card-solid hover-lift">
               <div style={styles.statIconBg}><Clock size={20} color="var(--secondary)" /></div>
               <div>
-                <div style={styles.statLabel}>미확인 알림</div>
-                <div style={styles.statValue}>3건</div>
+                <div style={styles.statLabel}>미확인 제출건</div>
+                <div style={styles.statValue}>{pendingMissions.length}건</div>
               </div>
             </div>
           </section>
@@ -82,7 +107,12 @@ export default function TeacherDashboard() {
               {quickMenuItems.map(item => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.id} style={styles.quickMenuItem} className="card-solid hover-lift">
+                  <button 
+                    key={item.id} 
+                    style={styles.quickMenuItem} 
+                    className="card-solid hover-lift"
+                    onClick={() => setActiveTab && setActiveTab(item.tab)}
+                  >
                     <div style={{...styles.quickMenuIconWrapper, background: item.bg}} className="squircle">
                       <Icon size={30} color={item.color} strokeWidth={2.5} />
                     </div>
@@ -95,32 +125,86 @@ export default function TeacherDashboard() {
           
           {/* 4. 오늘의 할 일 / 리뷰 대기 */}
           <section style={styles.sectionContainer}>
-            <div className="card-solid">
+            <div className="card-solid hover-lift">
                <div style={styles.todoHeader}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CheckSquare size={18} color="var(--text-main)" />
-                    <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>승인 대기 중인 미션</h4>
+                    <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>승인 대기 중인 제출물</h4>
                   </div>
-                  <span className="badge badge-primary">2건</span>
+                  {pendingMissions.length > 0 && (
+                    <span className="badge badge-primary">{pendingMissions.length}건</span>
+                  )}
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={styles.todoItem} className="hover-lift">
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                       <div style={styles.studentAvatarMini}>👦</div>
-                       <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>김예찬</div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>성경 요절 암송 제출</div>
-                       </div>
-                     </div>
-                     <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>확인하기</button>
-                  </div>
+                  {pendingMissions.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      현재 승인 대기 중인 항목이 없습니다. 🎉
+                    </div>
+                  ) : (
+                    pendingMissions.map((pm, idx) => {
+                      const missionNames = { attendance: '출석체크', offering: '헌금 제출', bible: '성경 암송' };
+                      return (
+                        <div key={idx} style={styles.todoItem} className="hover-lift">
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                             <div style={styles.studentAvatarMini}>{pm.student.avatar || '👦'}</div>
+                             <div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{pm.student.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{missionNames[pm.type] || '기타 미션'} 제출</div>
+                             </div>
+                           </div>
+                           <button 
+                             className="btn btn-primary" 
+                             style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                             onClick={() => setSelectedMission(pm)}
+                           >
+                             확인하기
+                           </button>
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
             </div>
           </section>
         </div>
 
       </div>
+
+      {/* 미션 확인 팝업 모달 */}
+      {selectedMission && (
+        <div style={styles.modalBackdrop} onClick={() => setSelectedMission(null)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()} className="animate-fade-up">
+            <h3 style={{ margin: '0 0 16px 0' }}>{selectedMission.student.name} 학생의 제출물</h3>
+            
+            <div style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px', marginBottom: '20px', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              {selectedMission.type === 'bible' ? (
+                <>
+                  <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: '8px' }}>📖 암송 내용</div>
+                  <div>"{selectedMission.mission.textContent}"</div>
+                </>
+              ) : (
+                <div>정상적으로 제출되었습니다. ({selectedMission.mission.submittedAt})</div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                style={{ flex: 1, padding: '12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                onClick={() => handleReject(selectedMission.student.id, selectedMission.type)}
+              >
+                반려하기
+              </button>
+              <button 
+                style={{ flex: 1, padding: '12px', background: '#10B981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                onClick={() => handleApprove(selectedMission.student.id, selectedMission.type)}
+              >
+                승인 (달란트 지급)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -262,6 +346,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '16px 20px',
+    borderBottom: '1px solid var(--border-light)',
   },
   studentAvatarMini: {
     width: '36px',
@@ -272,5 +357,23 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '1.2rem',
+  },
+  modalBackdrop: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
+    zIndex: 2000,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px',
+  },
+  modalContent: {
+    background: 'white',
+    borderRadius: '24px',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '400px',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
   }
 };
