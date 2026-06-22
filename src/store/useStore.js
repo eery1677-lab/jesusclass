@@ -47,6 +47,62 @@ export const useStore = create((set, get) => ({
   schedules: [],
   scheduleMemos: [],
   
+  // 데모용 자녀 로그인 코드 임시 저장소
+  childLoginCodes: {},
+  
+  // 자녀용 코드 발급
+  generateChildCode: (studentId) => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6자리 랜덤
+    set(state => ({
+      childLoginCodes: { ...state.childLoginCodes, [code]: studentId }
+    }));
+    return code;
+  },
+  
+  // 자녀 전용 코드로 로그인
+  loginWithChildCode: async (code) => {
+    const studentId = get().childLoginCodes[code];
+    if (studentId) {
+      const student = get().students.find(s => s.id === studentId);
+      set({
+        currentUser: {
+          uid: `child_${studentId}`,
+          email: '',
+          name: student?.name || '우리 아이',
+          role: 'student',
+          id: studentId,
+          mode: 'child',
+          isChildDirectLogin: true
+        },
+        authLoading: false
+      });
+      return true;
+    }
+    return false;
+  },
+  
+  // 모드 전환 (부모 <-> 자녀)
+  switchMode: (targetMode, pinCode) => {
+    const user = get().currentUser;
+    if (!user) return false;
+    
+    // 부모 -> 자녀 모드로 전환
+    if (targetMode === 'child') {
+      set({ currentUser: { ...user, mode: 'child' } });
+      return true;
+    }
+    
+    // 자녀 모드 -> 부모 모드로 전환
+    if (targetMode === 'parent') {
+      if (pinCode === '0000') {
+        set({ currentUser: { ...user, mode: 'parent' } });
+        return true;
+      }
+      return false; // 비밀번호 불일치
+    }
+    return false;
+  },
+  
   // 상태 업데이트 및 로컬스토리지 저장
   updateChurchName: (name) => {
     set({ churchName: name });
@@ -109,19 +165,23 @@ export const useStore = create((set, get) => ({
               email: user.email,
               name: userData.name || user.displayName || '이름 없음',
               role: userData.role, 
-              id: userData.studentId || user.uid // 매칭된 학생 ID
+              id: userData.studentId || user.uid, // 매칭된 학생 ID
+              mode: userData.role === 'teacher' ? 'teacher' : 'parent',
+              isChildDirectLogin: false
             },
             authLoading: false
           });
         } else {
-          // 권한 정보가 없으면 임시로 학부모(student)로 간주하거나 권한 없음 처리
+          // 권한 정보가 없으면 임시로 학부모(parent)로 간주
           set({ 
             currentUser: { 
               uid: user.uid, 
               email: user.email,
-              name: user.displayName || '이름 없음',
-              role: 'student', 
-              id: 'student1' // 임시 매핑
+              name: user.displayName || '학부모님',
+              role: 'parent', 
+              id: 'student1', // 임시 매핑
+              mode: 'parent',
+              isChildDirectLogin: false
             },
             authLoading: false
           });

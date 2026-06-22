@@ -21,12 +21,16 @@ import {
 import ProfileEditModal from './ProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, logout, switchUser, churchName, churchContact, students } = useStore();
+  const { currentUser, logout, switchUser, churchName, churchContact, students, generateChildCode, switchMode } = useStore();
   const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [generatedCode, setGeneratedCode] = useState(null);
 
   // 메뉴 리스트
   const tabs = currentUser.role === 'teacher' 
@@ -178,6 +182,47 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                   <span style={styles.moreMenuText}>교회 연락처 및 오시는 길</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
+                
+                {/* 부모 모드 전환 및 로그인 코드 발급 (학부모 계정 전용) */}
+                {currentUser.mode === 'parent' && (
+                  <>
+                    <button className="list-item-btn hover-lift" style={{...styles.moreMenuItem, background: 'rgba(16, 185, 129, 0.05)'}} 
+                      onClick={() => {
+                        switchMode('child');
+                        setIsMoreMenuOpen(false);
+                      }}>
+                      <div style={styles.moreMenuIconWrapper}><User size={18} color="#10B981" /></div>
+                      <span style={{...styles.moreMenuText, color: 'var(--primary)'}}>아이 모드로 전환 👦👧</span>
+                      <ChevronRight size={18} color="var(--primary)" />
+                    </button>
+                    
+                    <button className="list-item-btn hover-lift" style={{...styles.moreMenuItem}} 
+                      onClick={() => {
+                        const code = generateChildCode(currentUser.id);
+                        setGeneratedCode(code);
+                        setIsMoreMenuOpen(false);
+                      }}>
+                      <div style={styles.moreMenuIconWrapper}><ShieldCheck size={18} color="#F59E0B" /></div>
+                      <span style={styles.moreMenuText}>우리 아이 로그인 코드 발급</span>
+                      <ChevronRight size={18} color="var(--text-muted)" />
+                    </button>
+                  </>
+                )}
+
+                {/* 부모 계정으로 들어왔지만, 아이 모드인 경우 돌아가기 버튼 */}
+                {currentUser.mode === 'child' && !currentUser.isChildDirectLogin && (
+                  <button className="list-item-btn hover-lift" style={{...styles.moreMenuItem, background: 'rgba(79, 70, 229, 0.05)'}} 
+                    onClick={() => {
+                      setPinInput('');
+                      setPinError('');
+                      setPinModalOpen(true);
+                      setIsMoreMenuOpen(false);
+                    }}>
+                    <div style={styles.moreMenuIconWrapper}><Lock size={18} color="#4F46E5" /></div>
+                    <span style={{...styles.moreMenuText, color: '#4F46E5'}}>부모님 모드로 돌아가기</span>
+                    <ChevronRight size={18} color="#4F46E5" />
+                  </button>
+                )}
               </div>
               <button style={styles.logoutBtn} onClick={async () => { 
                 if (window.confirm('정말 로그아웃 하시겠습니까?')) {
@@ -230,6 +275,86 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               </div>
               
               <button style={styles.contactCloseBtn} onClick={() => setIsContactModalOpen(false)}>
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 부모님 PIN 모달 */}
+        {pinModalOpen && (
+          <div style={styles.moreBackdrop} onClick={() => setPinModalOpen(false)}>
+            <div style={styles.contactModal} onClick={(e) => e.stopPropagation()} className="animate-fade-up">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.2rem' }}>부모님 모드 복귀</h2>
+                <button onClick={() => setPinModalOpen(false)} style={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                부모님 모드로 돌아가려면 비밀번호(PIN) 4자리를 입력해주세요.<br/>
+                (현재 테스트 버전에서는 <b>0000</b>을 입력하세요)
+              </p>
+              
+              <input 
+                type="password" 
+                maxLength="4"
+                placeholder="****"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                style={{
+                  width: '100%', padding: '16px', fontSize: '1.5rem', textAlign: 'center',
+                  letterSpacing: '8px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                  marginBottom: '8px'
+                }}
+              />
+              
+              {pinError && <div style={{ color: '#EF4444', fontSize: '0.85rem', marginBottom: '16px', textAlign: 'center' }}>{pinError}</div>}
+              
+              <button 
+                style={{...styles.contactCloseBtn, marginTop: '8px', background: '#4F46E5'}} 
+                onClick={() => {
+                  const success = switchMode('parent', pinInput);
+                  if (success) {
+                    setPinModalOpen(false);
+                  } else {
+                    setPinError('비밀번호가 일치하지 않습니다.');
+                  }
+                }}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 자녀 로그인 코드 발급 결과 모달 */}
+        {generatedCode && (
+          <div style={styles.moreBackdrop} onClick={() => setGeneratedCode(null)}>
+            <div style={{...styles.contactModal, textAlign: 'center'}} onClick={(e) => e.stopPropagation()} className="animate-fade-up">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                <button onClick={() => setGeneratedCode(null)} style={styles.closeBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <ShieldCheck size={32} color="#F59E0B" />
+              </div>
+              <h2 style={{ margin: '0 0 12px 0', fontSize: '1.2rem' }}>아이 로그인 코드 발급 완료!</h2>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+                아이의 스마트폰이나 태블릿에서 지저스클래스 앱을 열고,<br/>
+                [자녀 코드로 접속하기]를 눌러 아래 6자리 숫자를 입력하게 해주세요.
+              </p>
+              
+              <div style={{ 
+                background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', 
+                fontSize: '2.5rem', fontWeight: 900, letterSpacing: '8px', color: 'var(--primary)',
+                border: '2px dashed var(--border-color)', marginBottom: '24px'
+              }}>
+                {generatedCode}
+              </div>
+              
+              <button style={styles.contactCloseBtn} onClick={() => setGeneratedCode(null)}>
                 확인
               </button>
             </div>
