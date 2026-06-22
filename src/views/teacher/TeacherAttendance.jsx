@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { CheckSquare, Calendar as CalendarIcon, User, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
+import { CheckSquare, Calendar as CalendarIcon, User, CheckCircle, XCircle, Clock, ArrowLeft, X, MessageSquare, Save } from 'lucide-react';
 
 export default function TeacherAttendance({ setActiveTab }) {
   const { students, updateStudentDalant } = useStore();
@@ -27,6 +27,31 @@ export default function TeacherAttendance({ setActiveTab }) {
 
   const getStatus = (studentId) => {
     return attendanceRecords[`${selectedDate}_${studentId}`] || 'none';
+  };
+
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [activeStudent, setActiveStudent] = useState(null);
+  const [absenceInput, setAbsenceInput] = useState('');
+  const [simbangInput, setSimbangInput] = useState('');
+  const { updateStudentNote } = useStore();
+
+  const openNoteModal = (student) => {
+    setActiveStudent(student);
+    setAbsenceInput(student.absenceReason || '');
+    setSimbangInput(student.simbangNote || '');
+    setNoteModalOpen(true);
+  };
+
+  const closeNoteModal = () => {
+    setNoteModalOpen(false);
+    setActiveStudent(null);
+  };
+
+  const saveNotes = () => {
+    if (!activeStudent) return;
+    updateStudentNote(activeStudent.id, 'absenceReason', absenceInput);
+    updateStudentNote(activeStudent.id, 'simbangNote', simbangInput);
+    closeNoteModal();
   };
 
   return (
@@ -66,11 +91,17 @@ export default function TeacherAttendance({ setActiveTab }) {
           const status = getStatus(student.id);
           return (
             <div key={student.id} style={styles.studentCard} className="card-solid hover-lift">
-              <div style={styles.studentInfo}>
+              <div style={styles.studentInfo} onClick={() => openNoteModal(student)} className="cursor-pointer">
                 <div style={styles.avatarMini}>{student.avatar || '👦'}</div>
                 <div>
                   <div style={styles.studentName}>{student.name}</div>
                   <div style={styles.studentMeta}>누적 출석: {student.attendanceCount}회</div>
+                  {(student.absenceReason || student.simbangNote) && (
+                    <div style={styles.noteIndicator}>
+                      <MessageSquare size={12} color="#8B5CF6" /> 
+                      <span style={{color: '#8B5CF6', fontSize: '0.75rem', fontWeight: 600}}>노트 있음</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -101,6 +132,59 @@ export default function TeacherAttendance({ setActiveTab }) {
           );
         })}
       </div>
+
+      {/* 심방/결석 사유 노트 모달 */}
+      {noteModalOpen && activeStudent && (
+        <div style={styles.modalOverlay} onClick={closeNoteModal}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.modalTitle}>
+                {activeStudent.avatar} {activeStudent.name} 학생 노트
+              </h3>
+              <button style={styles.closeBtn} onClick={closeNoteModal}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={styles.modalBody}>
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#EF4444', fontWeight: 700 }}>
+                  결석 사유
+                </label>
+                <input 
+                  type="text" 
+                  className="neon-input" 
+                  placeholder="예: 감기몸살, 가족 여행 등" 
+                  value={absenceInput}
+                  onChange={e => setAbsenceInput(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label className="form-label" style={{ color: '#8B5CF6', fontWeight: 700 }}>
+                  심방 / 기도 노트
+                </label>
+                <textarea 
+                  className="form-textarea" 
+                  placeholder="아이를 위해 기도할 제목이나 심방 내용을 기록하세요." 
+                  rows="4"
+                  value={simbangInput}
+                  onChange={e => setSimbangInput(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button className="btn" style={{background: '#E5E7EB', color: '#374151'}} onClick={closeNoteModal}>
+                취소
+              </button>
+              <button className="btn" style={{background: '#8B5CF6', color: 'white', display: 'flex', alignItems: 'center', gap: '6px'}} onClick={saveNotes}>
+                <Save size={16} /> 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -195,5 +279,64 @@ const styles = {
     fontSize: '0.85rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
+  },
+  noteIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    marginTop: '4px',
+    background: '#EDE9FE',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    width: 'fit-content'
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
+    zIndex: 9999,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '20px',
+  },
+  modalContent: {
+    background: 'white',
+    borderRadius: '20px',
+    width: '100%',
+    maxWidth: '400px',
+    overflow: 'hidden',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    borderBottom: '1px solid var(--border-light)',
+    background: '#F9FAFB',
+  },
+  modalTitle: {
+    margin: 0,
+    fontSize: '1.1rem',
+    fontWeight: 800,
+  },
+  closeBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'var(--text-muted)',
+    padding: '4px',
+  },
+  modalBody: {
+    padding: '20px',
+  },
+  modalFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    padding: '16px 20px',
+    borderTop: '1px solid var(--border-light)',
+    background: '#F9FAFB',
   }
 };

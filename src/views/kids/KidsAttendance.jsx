@@ -58,7 +58,7 @@ export default function KidsAttendance({ setActiveTab }) {
         </div>
       </header>
 
-      <div style={styles.card}>
+      <div style={styles.card} className="card-solid hover-lift">
         <div style={styles.monthHeader}>
           <button style={styles.navBtn}><ChevronLeft size={20} /></button>
           <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>2026년 {currentMonth}월</h3>
@@ -129,11 +129,7 @@ const styles = {
     fontWeight: 700,
   },
   card: {
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid var(--border-color)',
   },
   monthHeader: {
     display: 'flex',

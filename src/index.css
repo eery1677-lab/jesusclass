@@ -55,6 +55,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -121,9 +122,21 @@ a:hover {
 .hover-lift:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  border-color: var(--border-strong);
+  border-color: var(--border-strong) !important;
 }
 .hover-lift:active {
+  transform: translateY(0);
+  border-color: var(--border-strong) !important;
+}
+
+.hover-lift-no-border {
+  transition: var(--transition-smooth);
+}
+.hover-lift-no-border:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.hover-lift-no-border:active {
   transform: translateY(0);
 }
 
@@ -188,7 +201,6 @@ button, a {
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-  max-width: 100%;
   padding: 14px 16px;
   border-radius: var(--radius-md);
   background: var(--bg-app);
@@ -206,8 +218,25 @@ button, a {
   background: var(--bg-card);
 }
 
-/* Neon Focus Animation for Inputs */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 .neon-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  background: var(--bg-app);
+  color: var(--text-main);
   transition: all 0.2s ease;
   border: 2px solid var(--border-input) !important;
   border-radius: 16px;
@@ -239,9 +268,19 @@ button, a {
   border-radius: 24px !important; /* Make it more rounded like the image */
 }
 .service-icon-btn:active, .service-icon-btn:focus, .clickable-item:active, .clickable-item:focus {
-  border-color: #10B981 !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important; /* Green subtle glow */
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.15) !important; /* Grey subtle glow */
   transform: translateY(-1px) scale(0.98);
+}
+
+/* Hover Glow Gray (알레르기 경고용 등) */
+.hover-glow-gray {
+  transition: all 0.3s ease;
+}
+.hover-glow-gray:hover, .hover-glow-gray:active {
+  box-shadow: 0 0 15px rgba(156, 163, 175, 0.5), inset 0 0 5px rgba(156, 163, 175, 0.1) !important;
+  border-color: rgba(156, 163, 175, 0.8) !important;
+  transform: translateY(-1px);
 }
 
 /* Neon Logo Effect */
@@ -338,4 +377,25 @@ input, textarea { min-width: 0; max-width: 100%; }
   justify-content: center;
   margin-right: 8px;
   flex-shrink: 0;
+}
+@keyframes pulse-border-gray {
+  0% { border-color: rgba(156, 163, 175, 0.2); box-shadow: 0 0 0 rgba(156, 163, 175, 0); }
+  50% { border-color: rgba(156, 163, 175, 0.6); box-shadow: 0 0 10px rgba(156, 163, 175, 0.2); }
+  100% { border-color: rgba(156, 163, 175, 0.2); box-shadow: 0 0 0 rgba(156, 163, 175, 0); }
+}
+.pulse-border-gray {
+  animation: pulse-border-gray 2.5s infinite;
+}
+
+/* 데스크탑(PC) 하단 네비게이션 플로팅 스타일 */
+@media (min-width: 481px) {
+  .bottom-nav-container {
+    bottom: 24px !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--border-color) !important;
+    border-top: 1px solid var(--border-color) !important;
+    width: calc(100% - 32px) !important;
+    max-width: 448px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+  }
 }

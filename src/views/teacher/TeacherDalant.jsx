@@ -41,8 +41,8 @@ export default function TeacherDalant({ setActiveTab }) {
         </button>
         <TrendingUp size={24} style={{ color: '#F59E0B' }} />
         <div>
-          <h2>달란트 관리 및 수동 지급</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#F59E0B' }}>💰 달란트 관리 및 수동 지급</h2>
+          <p style={{ margin: 0, marginTop: '4px', color: 'var(--text-muted)', fontSize: '0.9rem', wordBreak: 'keep-all', lineHeight: '1.4' }}>
             우리 반 학생들의 달란트 현황을 확인하고 특별 보상이나 차감을 진행하세요.
           </p>
         </div>
@@ -77,8 +77,7 @@ export default function TeacherDalant({ setActiveTab }) {
             </div>
           </div>
 
-          <div style={styles.inputRow}>
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group">
               <label className="form-label">증감 종류</label>
               <div style={styles.typeToggle}>
                 <button 
@@ -86,19 +85,19 @@ export default function TeacherDalant({ setActiveTab }) {
                   style={{...styles.toggleBtn, background: isAdding ? '#10B981' : 'transparent', color: isAdding ? 'white' : 'var(--text-muted)'}}
                   onClick={() => setIsAdding(true)}
                 >
-                  <Plus size={16} /> 지급 (+)
+                  <Plus size={16} /> 지급(+)
                 </button>
                 <button 
                   type="button"
                   style={{...styles.toggleBtn, background: !isAdding ? '#EF4444' : 'transparent', color: !isAdding ? 'white' : 'var(--text-muted)'}}
                   onClick={() => setIsAdding(false)}
                 >
-                  <Minus size={16} /> 차감 (-)
+                  <Minus size={16} /> 차감(-)
                 </button>
               </div>
             </div>
             
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group">
               <label className="form-label">달란트 금액</label>
               <input 
                 type="number" 
@@ -110,7 +109,6 @@ export default function TeacherDalant({ setActiveTab }) {
                 required
               />
             </div>
-          </div>
 
           <div className="form-group">
             <label className="form-label">사유 (선택)</label>
@@ -186,10 +184,10 @@ const styles = {
   headerPanel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    padding: '24px 32px',
-    background: 'white',
-    borderRadius: '16px',
+    gap: '12px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #FFFBEB 0%, #ffffff 100%)',
+    borderLeft: '4px solid #F59E0B',
   },
   sectionTitle: {
     display: 'flex',
@@ -241,10 +239,7 @@ const styles = {
     fontWeight: 600,
     fontSize: '0.85rem',
   },
-  inputRow: {
-    display: 'flex',
-    gap: '16px',
-  },
+
   typeToggle: {
     display: 'flex',
     background: 'var(--bg-app)',
@@ -257,13 +252,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '4px',
     border: 'none',
     borderRadius: '20px', // inner pill shape
     fontWeight: 700,
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    whiteSpace: 'nowrap',
   },
   rankingSection: {
     display: 'flex',

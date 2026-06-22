@@ -49,8 +49,8 @@ export default function TeacherBulletin({ setActiveTab }) {
         </button>
         <FileText size={24} style={{ color: '#8B5CF6' }} />
         <div>
-          <h2>📜 모바일 주보 발행</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#8B5CF6' }}>📜 모바일 주보 발행</h2>
+          <p style={{ margin: 0, marginTop: '4px', color: 'var(--text-muted)', fontSize: '0.9rem', wordBreak: 'keep-all', lineHeight: '1.4' }}>
             이번 주일 예배 순서, 말씀, 광고가 담긴 주보를 발행하세요. 이미지나 텍스트로 등록할 수 있습니다.
           </p>
         </div>
@@ -206,10 +206,10 @@ const styles = {
   headerPanel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    padding: '24px 32px',
-    background: 'white',
-    borderRadius: '16px',
+    gap: '12px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #F5F3FF 0%, #ffffff 100%)',
+    borderLeft: '4px solid #8B5CF6',
   },
   section: {
     background: 'white',

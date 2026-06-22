@@ -17,13 +17,15 @@ import {
   ChevronRight,
   Check,
   AlertTriangle,
-  Flame
+  Flame,
+  ArrowRight,
+  Lock,
+  Gift
 } from 'lucide-react';
 import ProfileEditModal from '../../components/ProfileEditModal';
 
 export default function KidsDashboard({ setActiveTab }) {
   const { currentUser, students, submitMission, rejectMission, churchName } = useStore();
-  const [bibleText, setBibleText] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
@@ -42,6 +44,17 @@ export default function KidsDashboard({ setActiveTab }) {
 
   if (!student) return null;
 
+  // 일일 미션 정보 계산
+  const missions = [
+    { id: 'attendance', label: '예배 출석체크', type: 'attendance', points: '1달란트', tab: 'kids-attendance' },
+    { id: 'offering', label: '감사 헌금 드리기', type: 'offering', points: '1달란트', tab: 'kids-dashboard' }, // 헌금은 대시보드 바로체크
+    { id: 'bible', label: '성경 암송 요절', type: 'bible', points: '2달란트', tab: 'kids-memory-verse' }
+  ];
+
+  const completedMissionsCount = missions.filter(m => student.dailyMissions[m.type]?.status === 'completed').length;
+  const pendingMissionsCount = missions.filter(m => student.dailyMissions[m.type]?.status === 'pending').length;
+  const progressPercent = Math.round((completedMissionsCount / missions.length) * 100);
+
   const quickMenuItems = [
     { id: 'attendance', tab: 'kids-attendance', label: '출결체크', icon: CheckCircle, color: '#7B3DFF', bg: '#F3E8FF' }, 
     { id: 'dalant', tab: 'kids-dalant', label: '달란트조회', icon: Coins, color: '#F59E0B', bg: '#FEF3C7' },
@@ -53,21 +66,51 @@ export default function KidsDashboard({ setActiveTab }) {
     { id: 'bulletin', tab: 'kids-bulletin', label: '모바일주보', icon: FileText, color: '#6B7280', bg: '#F3F4F6' },
   ];
 
+  const handleMissionSubmit = (type, content = '') => {
+    submitMission(student.id, type, content);
+  };
+
+  const getMissionStatusBadge = (status) => {
+    switch (status) {
+      case 'completed':
+        return <span style={{ ...styles.mBadge, color: 'var(--accent-success)', background: 'var(--accent-success-bg)' }}>✅ 완료</span>;
+      case 'pending':
+        return <span style={{ ...styles.mBadge, color: '#D97706', background: 'rgba(245,158,11,0.08)' }}>⏳ 심사중</span>;
+      default:
+        return <span style={{ ...styles.mBadge, color: 'var(--text-muted)', background: 'var(--bg-app)' }}>⚪ 미완료</span>;
+    }
+  };
+
+  // 성경 암송 요절 렌더링 디코더
+  const getBibleVerseText = (rawContent) => {
+    if (!rawContent) return '아직 제출된 암송이 없습니다.';
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (parsed.type === 'media') {
+        return parsed.mediaType === 'video' ? '🎥 동영상 암송 숙제 제출 완료' : '🖼️ 암송 사진 인증 완료';
+      } else if (parsed.type === 'voice') {
+        return '🎙️ 녹음 파일 암송 제출 완료';
+      }
+      return parsed.text || rawContent;
+    } catch (e) {
+      return rawContent;
+    }
+  };
+
   return (
     <div style={styles.container}>
       <Confetti active={showConfetti} />
       
-      {/* 반응형 2단 대시보드 그리드 래퍼 */}
-      <div className="dashboard-grid">
+      <div className="dashboard-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
-        {/* 왼쪽 단 (모바일에서는 위쪽) */}
+        {/* 왼쪽 단 */}
         <div style={styles.column}>
           {/* 1. 상단 프로필 영역 */}
           <section style={styles.profileSection} className="card-solid hover-lift">
             <div style={styles.profileHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={styles.appBadge}>{churchName}</span>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>나의 프로필</h3>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>나의 프로필</h3>
               </div>
               <span style={{...styles.profileEditBtn, cursor: 'pointer'}} onClick={() => setIsProfileModalOpen(true)}>설정 <ChevronRight size={16} /></span>
             </div>
@@ -86,13 +129,13 @@ export default function KidsDashboard({ setActiveTab }) {
                   <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>{student.name}</h2>
                   <span className="badge badge-primary">LV.{student.level}</span>
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px', fontWeight: 500 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px', fontWeight: 600 }}>
                   {student.grade} • 열매 맺는 반
                 </p>
                 
                 {student.allergy && student.allergy.length > 0 && (
                   <div style={styles.allergyBadge}>
-                    <AlertTriangle size={12} /> <span>알레르기: {student.allergy.join(', ')}</span>
+                    <AlertTriangle size={12} /> <span>알레르기 주의: {student.allergy.join(', ')}</span>
                   </div>
                 )}
                 
@@ -104,7 +147,128 @@ export default function KidsDashboard({ setActiveTab }) {
             </div>
           </section>
 
-          {/* 2. 우리들 이야기 (8그리드 퀵 메뉴) */}
+          {/* 2. 오늘 하루 미션 달성도 (NEW!) */}
+          <section style={styles.sectionContainer}>
+            <div className="card-solid hover-lift" style={styles.missionCard}>
+              <div style={styles.missionHeader}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>오늘의 미션 달성</h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>매일 미션을 깨고 달란트를 모아보세요!</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={styles.progressText}>{completedMissionsCount} / {missions.length} 완료</span>
+                </div>
+              </div>
+
+              {/* 프로그레스 바 */}
+              <div style={styles.progressBarBg}>
+                <div style={{ ...styles.progressBarFill, width: `${progressPercent}%` }}></div>
+              </div>
+
+              {/* 미션 목록 리스트 */}
+              <div style={styles.missionList}>
+                {missions.map(m => {
+                  const status = student.dailyMissions[m.type]?.status || 'none';
+                  return (
+                    <div 
+                      key={m.id} 
+                      style={styles.missionItem}
+                      className="hover-lift"
+                      onClick={() => {
+                        if (m.type === 'offering' && status === 'none') {
+                          if (window.confirm('오늘의 헌금 드리기 미션을 제출하시겠습니까? (+1달란트)')) {
+                            handleMissionSubmit('offering');
+                          }
+                        } else if (m.tab) {
+                          setActiveTab(m.tab);
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          ...styles.checkCircle,
+                          borderColor: status === 'completed' ? 'var(--primary)' : 'var(--border-strong)',
+                          background: status === 'completed' ? 'var(--primary)' : 'transparent'
+                        }}>
+                          {status === 'completed' && <Check size={12} color="white" strokeWidth={3} />}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: status === 'completed' ? 'var(--text-light)' : 'var(--text-main)' }}>
+                            {m.label} <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>({m.points})</span>
+                          </div>
+                          {m.type === 'bible' && status !== 'none' && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 600 }}>
+                              제출: {getBibleVerseText(student.dailyMissions.bible.textContent)}
+                            </div>
+                          )}
+                          {student.dailyMissions[m.type]?.teacherFeedback && (
+                            <div style={{
+                              fontSize: '0.78rem',
+                              color: '#8B5CF6',
+                              marginTop: '4px',
+                              fontWeight: 700,
+                              background: '#EDE9FE',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              💌 선생님: {student.dailyMissions[m.type].teacherFeedback}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {getMissionStatusBadge(status)}
+                        {status === 'none' && m.type !== 'offering' && <ChevronRight size={16} color="var(--text-muted)" />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* 오른쪽 단 */}
+        <div style={styles.column}>
+          {/* 3. 성경 암송 요절 피드 */}
+          <section style={styles.sectionContainer}>
+            <div style={styles.feedCard} className="card-solid hover-lift">
+              <div style={styles.feedHeader}>
+                <div style={styles.feedTypeBadge}><Sparkles size={12} /> 암송 요절 추천</div>
+                <span style={styles.feedDate}>시편 23:1</span>
+              </div>
+              
+              <div style={styles.missionTitleArea}>
+                <div style={styles.bibleIconBg} className="neon-logo-box">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v20M5 8h14" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>"여호와는 나의 목자시니..."</h4>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>
+                    녹음, 텍스트 혹은 **비디오/사진**으로 제출해 보세요!
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '20px' }}>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', borderRadius: '16px', display: 'flex', justifyContent: 'center', gap: '8px' }}
+                  onClick={() => setActiveTab('kids-memory-verse')}
+                >
+                  <span>암송 숙제하러 가기</span> <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* 4. 우리들 이야기 (8그리드 퀵 메뉴) */}
           <section style={styles.sectionContainer}>
             <div style={styles.sectionTitle}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>우리들 이야기</h3>
@@ -120,7 +284,7 @@ export default function KidsDashboard({ setActiveTab }) {
                     onClick={() => setActiveTab && setActiveTab(item.tab)}
                   >
                     <div style={{...styles.quickMenuIconWrapper, background: item.bg}} className="squircle">
-                      <Icon size={30} color={item.color} strokeWidth={2.5} />
+                      <Icon size={26} color={item.color} strokeWidth={2.5} />
                     </div>
                     <span style={styles.quickMenuLabel}>{item.label}</span>
                   </button>
@@ -128,135 +292,14 @@ export default function KidsDashboard({ setActiveTab }) {
               })}
             </div>
           </section>
-        </div>
 
-        {/* 오른쪽 단 (모바일에서는 아래쪽) */}
-        <div style={styles.column}>
-          {/* 출결 리마인더 */}
-          {student.dailyMissions.attendance.status === 'none' && (
-            <div style={styles.reminderCard} className="card-solid hover-lift">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={styles.reminderIcon} className="animate-pulse-soft"><CheckCircle size={22} color="white" /></div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>예수님과 함께하는 하루</h4>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>출석체크하고 달란트 받기</p>
-                </div>
-              </div>
-              <button 
-                className="btn btn-primary" 
-                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                onClick={() => handleMissionSubmit('attendance')}
-              >
-                체크하기
-              </button>
-            </div>
-          )}
-
-          {/* 데일리 미션 (암송 요절) */}
-          <section style={styles.sectionContainer}>
-            <div style={styles.feedCard} className="card-solid hover-lift">
-              <div style={styles.feedHeader}>
-                <div style={styles.feedTypeBadge}><Sparkles size={12} /> 데일리 미션</div>
-                <span style={styles.feedDate}>오늘의 말씀 암송</span>
-              </div>
-              
-              <div style={styles.missionTitleArea}>
-                <div 
-                  style={{
-                    ...styles.missionIconBg, 
-                    background: 'var(--bg-card)', 
-                    border: '2px solid rgba(16, 185, 129, 0.5)',
-                    borderRadius: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxSizing: 'border-box'
-                  }} 
-                  className="neon-logo-box"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v20M5 8h14" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>이번 주 성경 요절 암송하기</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    외운 말씀을 또박또박 적어보세요 (+2달란트)
-                  </p>
-                </div>
-              </div>
-              
-              <div style={{ marginTop: '20px' }}>
-                {student.dailyMissions.bible.status === 'none' && (
-                  <div style={styles.bibleForm}>
-                    <textarea 
-                      value={bibleText}
-                      onChange={(e) => setBibleText(e.target.value)}
-                      placeholder="외운 말씀을 여기에 작성해 주세요..."
-                      className="form-textarea"
-                      style={{ minHeight: '90px' }}
-                    />
-                    <button 
-                      disabled={!bibleText.trim()}
-                      onClick={() => handleMissionSubmit('bible', bibleText)}
-                      style={{ 
-                        alignSelf: 'flex-end', 
-                        marginTop: '12px',
-                        padding: '10px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: 'var(--primary)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s ease',
-                        opacity: bibleText.trim() ? 1 : 0.5,
-                        cursor: bibleText.trim() ? 'pointer' : 'default',
-                      }}
-                    >
-                      <Send size={16} /> <span>제출하기</span>
-                    </button>
-                  </div>
-                )}
-                {student.dailyMissions.bible.status === 'pending' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={styles.pendingBadge}>⏳ 선생님 암송 승인 대기 중</div>
-                    <button 
-                      className="btn hover-lift" 
-                      style={{ 
-                        alignSelf: 'flex-end', 
-                        padding: '8px 16px', 
-                        fontSize: '0.85rem', 
-                        background: 'rgba(239, 68, 68, 0.1)', 
-                        color: '#EF4444',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontWeight: 700
-                      }}
-                      onClick={() => {
-                        setBibleText(student.dailyMissions.bible.textContent || '');
-                        rejectMission(student.id, 'bible');
-                      }}
-                    >
-                      제출 취소하고 수정하기
-                    </button>
-                  </div>
-                )}
-                {student.dailyMissions.bible.status === 'completed' && (
-                  <div style={styles.completedBadge}><Check size={16} strokeWidth={3} /> 암송 완료! (+2)</div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* 간식 배너 */}
+          {/* 5. 주일 간식 배너 */}
           <section style={styles.sectionContainer}>
             <div style={styles.snackBanner} className="card-solid hover-lift">
               <div style={styles.snackHeader}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={styles.appBadge}>주일학교</span>
-                  <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>이번 주일 간식</h4>
+                  <span style={styles.snackBadge}>달콤 간식</span>
+                  <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>이번 주일의 맛있는 간식</h4>
                 </div>
                 <span style={styles.snackDate}>6/21</span>
               </div>
@@ -308,7 +351,7 @@ const styles = {
     paddingLeft: '4px',
   },
   profileSection: {
-    padding: '16px',
+    padding: '20px',
   },
   profileHeader: {
     display: 'flex',
@@ -318,7 +361,7 @@ const styles = {
   },
   profileEditBtn: {
     fontSize: '0.8rem',
-    fontWeight: 600,
+    fontWeight: 700,
     color: 'var(--primary)',
     display: 'flex',
     alignItems: 'center',
@@ -328,18 +371,19 @@ const styles = {
   profileContent: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '16px',
   },
   avatarCircle: {
-    width: '68px',
-    height: '68px',
+    width: '76px',
+    height: '76px',
     borderRadius: '50%',
     background: 'var(--bg-app)',
-    border: '2px solid var(--border-light)',
+    border: '2.5px solid rgba(16, 185, 129, 0.4)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    boxShadow: 'var(--shadow-sm)',
   },
   profileImage: {
     width: '100%',
@@ -347,7 +391,7 @@ const styles = {
     objectFit: 'cover',
   },
   avatarEmoji: {
-    fontSize: '2.5rem',
+    fontSize: '2.8rem',
   },
   profileInfo: {
     flex: 1,
@@ -358,15 +402,15 @@ const styles = {
     gap: '8px',
   },
   allergyBadge: {
-    marginTop: '8px',
+    marginTop: '6px',
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '0.75rem',
+    fontSize: '0.7rem',
     color: 'var(--accent-danger)',
     background: 'var(--accent-danger-bg)',
     padding: '4px 8px',
-    borderRadius: 'var(--radius-sm)',
+    borderRadius: '8px',
     fontWeight: 700,
   },
   dalantBadge: {
@@ -376,9 +420,9 @@ const styles = {
     marginTop: '10px',
     padding: '4px 12px 4px 4px',
     background: 'var(--bg-app)',
-    border: '1px solid var(--border-light)',
+    border: '1.5px solid var(--border-light)',
     borderRadius: 'var(--radius-full)',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
   },
   dalantIconBg: {
     width: '24px',
@@ -389,11 +433,72 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // 미션 카드 스타일
+  missionCard: {
+    padding: '20px',
+  },
+  missionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '14px',
+  },
+  progressText: {
+    fontSize: '0.9rem',
+    fontWeight: 800,
+    color: 'var(--primary)',
+  },
+  progressBarBg: {
+    width: '100%',
+    height: '12px',
+    background: 'var(--bg-app)',
+    borderRadius: '6px',
+    overflow: 'hidden',
+    marginBottom: '16px',
+    border: '1px solid var(--border-light)',
+  },
+  progressBarFill: {
+    height: '100%',
+    background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
+    borderRadius: '6px',
+    transition: 'width 0.4s ease-in-out',
+  },
+  missionList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  missionItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px 14px',
+    background: 'var(--bg-app)',
+    borderRadius: '16px',
+    border: '1.5px solid var(--border-light)',
+    cursor: 'pointer',
+  },
+  checkCircle: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    border: '2px solid var(--border-strong)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mBadge: {
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    padding: '3px 8px',
+    borderRadius: '8px',
+  },
+  // 퀵 메뉴 그리드
   quickMenuGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '8px',
-    padding: '8px 0',
+    padding: '4px 0',
   },
   quickMenuItem: {
     display: 'flex',
@@ -401,15 +506,16 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
-    padding: '8px 2px',
+    padding: '10px 2px',
     cursor: 'pointer',
     width: '100%',
     minWidth: 0,
-    aspectRatio: '1 / 1', // 완벽한 정사각형 모양 (앱 아이콘 타일)
+    aspectRatio: '1 / 1',
+    borderRadius: '20px',
   },
   quickMenuIconWrapper: {
-    width: '48px', // 타일 안에서는 살짝 작아도 됨
-    height: '48px',
+    width: '46px',
+    height: '46px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -417,7 +523,7 @@ const styles = {
   },
   quickMenuLabel: {
     fontSize: '0.65rem',
-    fontWeight: 700,
+    fontWeight: 800,
     color: 'var(--text-main)',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -427,7 +533,7 @@ const styles = {
     lineHeight: '1.2',
   },
   feedCard: {
-    padding: '16px',
+    padding: '20px',
   },
   feedHeader: {
     display: 'flex',
@@ -442,30 +548,35 @@ const styles = {
     fontSize: '0.75rem',
     fontWeight: 800,
     color: 'var(--primary)',
-    backgroundColor: 'hsla(252, 100%, 67%, 0.1)',
-    padding: '4px 8px',
-    borderRadius: 'var(--radius-sm)',
+    backgroundColor: 'hsla(142, 72%, 29%, 0.08)',
+    padding: '4px 10px',
+    borderRadius: '8px',
   },
   feedDate: {
     fontSize: '0.8rem',
     color: 'var(--text-muted)',
-    fontWeight: 600,
+    fontWeight: 700,
   },
   missionTitleArea: {
     display: 'flex',
     gap: '12px',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  missionIconBg: {
-    fontSize: '1.6rem',
+  bibleIconBg: {
     width: '48px',
     height: '48px',
-    background: '#FEF3C7', // 파스텔 톤 배경
-    border: '1px solid #FDE68A',
+    background: 'var(--bg-app)', 
+    border: '2px solid rgba(16, 185, 129, 0.4)',
+    borderRadius: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    fontSize: '1.6rem',
     color: '#D97706',
   },
   snackBanner: {
-    padding: '16px',
+    padding: '20px',
     background: 'var(--bg-card)',
   },
   snackHeader: {
@@ -482,6 +593,14 @@ const styles = {
     color: 'white',
     borderRadius: 'var(--radius-full)',
     letterSpacing: '0.02em',
+  },
+  snackBadge: {
+    fontSize: '0.75rem',
+    fontWeight: 800,
+    padding: '4px 10px',
+    backgroundColor: '#FFE4E6',
+    color: '#F43F5E',
+    borderRadius: 'var(--radius-full)',
   },
   snackDate: {
     fontSize: '0.8rem',
@@ -508,46 +627,5 @@ const styles = {
     width: '64px',
     height: '64px',
     backgroundColor: '#FFE4E6',
-  },
-  reminderCard: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 20px',
-    color: 'var(--text-main)',
-  },
-  reminderIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    background: 'var(--primary)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bibleForm: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  pendingBadge: {
-    padding: '12px',
-    textAlign: 'center',
-    borderRadius: 'var(--radius-sm)',
-    background: 'hsla(38, 92%, 50%, 0.1)',
-    color: '#D97706',
-    fontWeight: 700,
-    fontSize: '0.9rem',
-  },
-  completedBadge: {
-    padding: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--accent-success-bg)',
-    color: 'var(--accent-success)',
-    fontWeight: 700,
-    fontSize: '0.9rem',
   }
 };

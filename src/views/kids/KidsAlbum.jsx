@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { Camera, Heart, Calendar, User, MessageSquare, ChevronLeft, Send } from 'lucide-react';
 
 export default function KidsAlbum({ setActiveTab }) {
-  const { albums, likeAlbum, addComment, currentUser } = useStore();
+  const { albums, likeAlbum, addCommentToAlbum, currentUser } = useStore();
   const [commentInputs, setCommentInputs] = useState({});
 
   const handleLike = (albumId) => {
@@ -18,7 +18,7 @@ export default function KidsAlbum({ setActiveTab }) {
     e.preventDefault();
     const content = commentInputs[albumId];
     if (content && content.trim()) {
-      addComment(albumId, { writer: currentUser.name, content: content.trim() });
+      addCommentToAlbum(albumId, currentUser.name, content.trim());
       setCommentInputs(prev => ({...prev, [albumId]: ''}));
     }
   };

@@ -23,7 +23,7 @@ export default function KidsBulletin({ setActiveTab }) {
       </header>
 
       {currentBulletin ? (
-        <div style={styles.bulletinPaper} className="card-solid">
+        <div style={styles.bulletinPaper} className="card-solid hover-lift">
           <div style={styles.paperHeader}>
             <div>
               <div style={styles.volText}>최신 발행 주보</div>
@@ -54,7 +54,7 @@ export default function KidsBulletin({ setActiveTab }) {
           )}
         </div>
       ) : (
-        <div style={styles.bulletinPaper} className="card-solid">
+        <div style={styles.bulletinPaper} className="card-solid hover-lift">
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
             아직 이번 주 주보가 등록되지 않았습니다. 🙏
           </div>
@@ -62,10 +62,10 @@ export default function KidsBulletin({ setActiveTab }) {
       )}
 
       <div style={styles.actionButtons}>
-        <button className="btn" style={styles.actionBtn}>
+        <button className="btn hover-lift" style={styles.actionBtn}>
           <Download size={18} /> 주보 다운로드 (PDF)
         </button>
-        <button className="btn" style={styles.actionBtn}>
+        <button className="btn hover-lift" style={styles.actionBtn}>
           <Share2 size={18} /> 공유하기
         </button>
       </div>

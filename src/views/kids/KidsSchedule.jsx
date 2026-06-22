@@ -1,24 +1,23 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Users, ChevronLeft, Send, MessageSquare } from 'lucide-react';
+import { useStore } from '../../store/useStore';
 
 export default function KidsSchedule({ setActiveTab }) {
+  const { schedules, addScheduleMemo, currentUser } = useStore();
   const [memoText, setMemoText] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleMemoSubmit = (e) => {
     e.preventDefault();
     if (memoText.trim()) {
+      addScheduleMemo(currentUser.id, currentUser.name, memoText);
       setSubmitted(true);
       setMemoText('');
     }
   };
-  const schedule = [
-    { time: '09:00', title: '주일학교 찬양 및 예배', location: '소예배실', icon: Users, color: '#10B981', bg: '#D1FAE5' },
-    { time: '10:00', title: '반별 공과 공부', location: '각 반 교실', icon: Calendar, color: '#3B82F6', bg: '#DBEAFE' },
-    { time: '10:40', title: '간식 및 친교 시간', location: '친교실', icon: Clock, color: '#F59E0B', bg: '#FEF3C7' },
-    { time: '11:00', title: '오후 활동 (체육/미술)', location: '야외 및 체육관', icon: MapPin, color: '#10B981', bg: '#D1FAE5' },
-    { time: '12:00', title: '귀가', location: '본당 앞', icon: Users, color: '#6B7280', bg: '#F3F4F6' },
-  ];
+
+  const icons = { Calendar, Clock, MapPin, Users };
+
 
   return (
     <div style={styles.container}>
@@ -37,11 +36,11 @@ export default function KidsSchedule({ setActiveTab }) {
         </div>
       </header>
 
-      <div style={styles.timelineCard}>
+      <div style={styles.timelineCard} className="card-solid hover-lift">
         <div style={styles.timeline}>
-          {schedule.map((item, idx) => {
-            const Icon = item.icon;
-            const isLast = idx === schedule.length - 1;
+          {(schedules || []).map((item, idx) => {
+            const Icon = icons[item.iconType] || Calendar;
+            const isLast = idx === (schedules?.length || 0) - 1;
             return (
               <div key={idx} style={styles.timelineItem}>
                 <div style={styles.timeColumn}>
@@ -69,7 +68,7 @@ export default function KidsSchedule({ setActiveTab }) {
         </div>
       </div>
 
-      <div style={styles.memoFormSection}>
+      <div style={styles.memoFormSection} className="card-solid hover-lift">
         <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 700 }}>일정 관련 문의/메모</h3>
         {submitted ? (
           <div style={styles.submittedMsg}>
@@ -81,7 +80,11 @@ export default function KidsSchedule({ setActiveTab }) {
             <input 
               type="text" 
               placeholder="궁금한 점이나 남길 메모를 적어주세요." 
-              style={styles.memoInput}
+              className="neon-input"
+              style={{
+                ...styles.memoInput,
+                transition: 'var(--transition-smooth)'
+              }}
               value={memoText}
               onChange={e => setMemoText(e.target.value)}
             />
@@ -136,11 +139,7 @@ const styles = {
     justifyContent: 'center',
   },
   timelineCard: {
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid var(--border-color)',
   },
   timeline: {
     display: 'flex',
@@ -201,11 +200,7 @@ const styles = {
   },
   memoFormSection: {
     marginTop: '32px',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid var(--border-color)',
   },
   memoForm: {
     display: 'flex',
@@ -224,14 +219,14 @@ const styles = {
     width: '44px',
     height: '44px',
     borderRadius: '50%',
-    background: isActive ? 'var(--primary)' : 'var(--bg-main)',
-    border: isActive ? 'none' : '1px solid var(--border-input)',
-    color: isActive ? 'white' : 'var(--text-muted)',
+    background: isActive ? 'var(--primary)' : 'rgba(16, 185, 129, 0.15)',
+    color: isActive ? 'white' : 'rgba(16, 185, 129, 0.6)',
+    border: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: isActive ? 'pointer' : 'default',
-    transition: 'all 0.2s',
+    transition: 'all 0.2s ease',
   }),
   submittedMsg: {
     background: 'var(--primary)',

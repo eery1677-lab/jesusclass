@@ -1,141 +1,9 @@
 import { create } from 'zustand';
+import { collection, doc, onSnapshot, updateDoc, setDoc, deleteDoc, addDoc, getDoc } from 'firebase/firestore';
+import { signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { db, auth, googleProvider } from '../firebase';
 
-// 초기 가상 데이터베이스 구성
-const initialStudents = [
-  {
-    id: 'student1',
-    name: '김예찬',
-    grade: '초등부 3학년',
-    avatar: '🐑',
-    level: 2,
-    xp: 150,
-    dalant: 18,
-    attendanceCount: 15,
-    offeringCount: 14,
-    bibleCount: 12,
-    dailyMissions: {
-      attendance: { status: 'none', submittedAt: null },
-      offering: { status: 'none', submittedAt: null },
-      bible: { status: 'none', textContent: '', submittedAt: null }
-    },
-    allergy: ['땅콩', '우유']
-  },
-  {
-    id: 'student2',
-    name: '이주은',
-    grade: '초등부 5학년',
-    avatar: '🦁',
-    level: 3,
-    xp: 280,
-    dalant: 25,
-    attendanceCount: 18,
-    offeringCount: 16,
-    bibleCount: 15,
-    dailyMissions: {
-      attendance: { status: 'completed', submittedAt: '2026-06-20 09:00' },
-      offering: { status: 'pending', submittedAt: '2026-06-20 09:15' },
-      bible: { status: 'pending', textContent: '여호와는 나의 목자시니 내게 부족함이 없으리로다 (시 23:1)', submittedAt: '2026-06-20 09:20' }
-    },
-    allergy: []
-  },
-  {
-    id: 'student3',
-    name: '박민우',
-    grade: '중등부 1학년',
-    avatar: '🦅',
-    level: 1,
-    xp: 60,
-    dalant: 9,
-    attendanceCount: 8,
-    offeringCount: 8,
-    bibleCount: 5,
-    dailyMissions: {
-      attendance: { status: 'none', submittedAt: null },
-      offering: { status: 'none', submittedAt: null },
-      bible: { status: 'none', textContent: '', submittedAt: null }
-    },
-    allergy: ['복숭아']
-  }
-];
-
-const initialNotices = [
-  {
-    id: 1,
-    title: '📢 이번 주일 야외 특별 예배 및 준비물 안내',
-    content: '샬롬! 이번 주일(6월 21일)은 교회 앞 푸른 언덕 공원에서 야외 예배로 드려집니다. 아이들이 뜨거운 햇빛을 피할 수 있도록 개인 모자와 돗자리를 지참할 수 있게 지도해 주세요! 예배 후에 맛있는 피자 간식 시간도 준비되어 있습니다! 🍕',
-    writer: '박사랑 선생님',
-    createdAt: '2026-06-20',
-    comments: [
-      { id: 101, writer: '김예찬 학부모', content: '알겠습니다, 선생님! 예찬이 모자 씌워서 보내겠습니다. 😊', createdAt: '2026-06-20 10:15' },
-      { id: 102, writer: '이주은 학부모', content: '돗자리도 하나 챙겨 보낼게요. 감사합니다!', createdAt: '2026-06-20 11:30' }
-    ]
-  },
-  {
-    id: 2,
-    title: '📜 6월 3주차 성경 암송 요절',
-    content: '“하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라” (요한복음 3장 16절 말씀) \n\n매일 스스로 외워보고 미션 창에 입력해 보세요! 성공 시 2달란트가 지급됩니다.',
-    writer: '박사랑 선생님',
-    createdAt: '2026-06-18',
-    comments: []
-  }
-];
-
-const initialAlbums = [
-  {
-    id: 1,
-    title: '🌿 지난 주일 신나는 성경 퀴즈 골든벨 현장!',
-    writer: '박사랑 선생님',
-    createdAt: '2026-06-14',
-    likes: 15,
-    likedBy: [],
-    image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1000',
-    comments: [
-      { id: 201, writer: '김예찬 학부모', content: '아이들이 정말 신나 보이네요! 말씀 공부가 재밌나 봐요.', createdAt: '2026-06-14 15:40' }
-    ]
-  },
-  {
-    id: 2,
-    title: '🎈 초등부 여름 성경학교 준비를 위한 풍선 데코 완료',
-    writer: '이주은 선생님',
-    createdAt: '2026-06-12',
-    likes: 9,
-    likedBy: [],
-    image: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1000',
-    comments: []
-  }
-];
-
-const initialMessages = [
-  {
-    id: 1,
-    studentId: 'student1',
-    senderId: 'teacher1',
-    senderName: '박사랑 선생님',
-    content: '예찬아! 지난주에 아프다고 들었는데, 몸은 좀 괜찮아졌니? 주일에 건강한 모습으로 보자!',
-    timestamp: '2026-06-20 09:30'
-  },
-  {
-    id: 2,
-    studentId: 'student1',
-    senderId: 'student1',
-    senderName: '김예찬',
-    content: '네 선생님! 이제 다 나았어요. 주일에 교회 일찍 갈게요!',
-    timestamp: '2026-06-20 10:02'
-  }
-];
-
-const initialBulletins = [
-  {
-    id: 1,
-    title: '6월 3주차 주일학교 주보',
-    content: '1. 사도신경\n2. 찬양 (예수 사랑하심은)\n3. 대표기도 (이주은 어린이)\n4. 말씀 (마태복음 5장 13-16절)\n5. 헌금 및 주기도문',
-    imageUrl: null,
-    writer: '박사랑 선생님',
-    createdAt: '2026-06-20',
-  }
-];
-
-// 로컬스토리지 복원 헬퍼
+// 로컬스토리지 헬퍼 (로그인 상태, 설정 등)
 const getLocalStorage = (key, initial) => {
   try {
     const saved = localStorage.getItem(key);
@@ -152,20 +20,15 @@ const setLocalStorage = (key, value) => {
 };
 
 export const useStore = create((set, get) => ({
-  // 사용자 상태 ('student' / 'teacher')
-  currentUser: getLocalStorage('jc_current_user', {
-    id: 'student1',
-    role: 'student',
-    name: '김예찬'
-  }),
-  
-  // 교사 전용 설정 (안식일 모드 등)
+  // 1. 로컬 상태 (로그인, 설정 등)
+  // currentUser: 초기값 null (인증 확인 전)
+  currentUser: null,
+  authLoading: true,
   teacherSettings: getLocalStorage('jc_teacher_settings', {
     dndEnabled: false,
     dndStart: '22:00',
     dndEnd: '08:00'
   }),
-  
   churchName: getLocalStorage('jc_church_name', '양정교회'),
   churchContact: getLocalStorage('jc_church_contact', {
     phone: '02-123-4567',
@@ -173,318 +36,448 @@ export const useStore = create((set, get) => ({
     email: 'jesusclass@church.com'
   }),
 
-  students: getLocalStorage('jc_students', initialStudents),
-  notices: getLocalStorage('jc_notices', initialNotices),
-  albums: getLocalStorage('jc_albums', initialAlbums),
-  messages: getLocalStorage('jc_messages', initialMessages),
-  bulletins: getLocalStorage('jc_bulletins', initialBulletins),
+  // 2. Firebase 상태 저장소
+  students: [],
+  notices: [],
+  albums: [],
+  messages: [],
+  bulletins: [],
+  snacks: [],
+  snackRequests: [],
+  schedules: [],
+  scheduleMemos: [],
   
-  // 설정 업데이트
+  // 상태 업데이트 및 로컬스토리지 저장
   updateChurchName: (name) => {
     set({ churchName: name });
     setLocalStorage('jc_church_name', name);
   },
-
   updateChurchContact: (contact) => {
     set({ churchContact: contact });
     setLocalStorage('jc_church_contact', contact);
   },
-
-  // 교사 설정 업데이트
   updateTeacherSettings: (settings) => {
     const newSettings = { ...get().teacherSettings, ...settings };
     set({ teacherSettings: newSettings });
     setLocalStorage('jc_teacher_settings', newSettings);
   },
-  
-  // 1. 유저 역할 전환
-  switchUser: (role, id) => {
-    let name = '박사랑 선생님';
-    if (role === 'student') {
-      const student = get().students.find(s => s.id === id);
-      name = student ? student.name : '학생';
+  // Firebase 로그인 연동 (Google)
+  loginWithGoogle: async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
     }
-    const newUser = { id, role, name };
-    set({ currentUser: newUser });
-    setLocalStorage('jc_current_user', newUser);
   },
-  
-  // 1-1. 학생 프로필 업데이트
-  updateStudentProfile: (studentId, updates) => {
-    const updatedStudents = get().students.map(student => {
-      if (student.id === studentId) {
-        return { ...student, ...updates };
-      }
-      return student;
-    });
-    set({ students: updatedStudents });
-    setLocalStorage('jc_students', updatedStudents);
 
-    // 현재 접속자가 수정된 학생이라면 currentUser 이름도 업데이트
-    const current = get().currentUser;
-    if (current.role === 'student' && current.id === studentId && updates.name) {
-      const newUser = { ...current, name: updates.name };
-      set({ currentUser: newUser });
-      setLocalStorage('jc_current_user', newUser);
+  // Firebase 로그인 연동 (Email)
+  loginWithEmail: async (email, password) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Email login error:', error);
+      throw error;
     }
   },
-  
-  // 2. 일일 미션 제출 (학생용)
-  submitMission: (studentId, missionType, textContent = '') => {
-    const updatedStudents = get().students.map(student => {
-      if (student.id === studentId) {
-        const now = new Date().toLocaleString();
-        return {
-          ...student,
-          dailyMissions: {
-            ...student.dailyMissions,
-            [missionType]: {
-              status: 'pending',
-              textContent: textContent,
-              submittedAt: now
-            }
-          }
-        };
-      }
-      return student;
-    });
-    
-    set({ students: updatedStudents });
-    setLocalStorage('jc_students', updatedStudents);
+
+  // 로그아웃
+  logout: async () => {
+    try {
+      await signOut(auth);
+      set({ currentUser: null });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   },
-  
-  // 3. 일일 미션 승인 (교사용)
-  approveMission: (studentId, missionType) => {
-    const updatedStudents = get().students.map(student => {
-      if (student.id === studentId) {
-        // 기존 획득 횟수 증가
-        let extraAttendance = 0;
-        let extraOffering = 0;
-        let extraBible = 0;
-        let extraDalant = 1; // 기본 1달란트 지급
+
+  // 3. Firebase 실시간 리스너 초기화
+  initFirebaseListeners: () => {
+    if (get()._listenersInitialized) return;
+    set({ _listenersInitialized: true });
+
+    // Firebase 인증 상태 리스너
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // users 컬렉션에서 권한 가져오기
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          set({ 
+            currentUser: { 
+              uid: user.uid, 
+              email: user.email,
+              name: userData.name || user.displayName || '이름 없음',
+              role: userData.role, 
+              id: userData.studentId || user.uid // 매칭된 학생 ID
+            },
+            authLoading: false
+          });
+        } else {
+          // 권한 정보가 없으면 임시로 학부모(student)로 간주하거나 권한 없음 처리
+          set({ 
+            currentUser: { 
+              uid: user.uid, 
+              email: user.email,
+              name: user.displayName || '이름 없음',
+              role: 'student', 
+              id: 'student1' // 임시 매핑
+            },
+            authLoading: false
+          });
+        }
+      } else {
+        set({ currentUser: null, authLoading: false });
+      }
+    });
+
+    const collections = [
+      { name: 'students', stateKey: 'students' },
+      { name: 'notices', stateKey: 'notices' },
+      { name: 'albums', stateKey: 'albums' },
+      { name: 'messages', stateKey: 'messages' },
+      { name: 'bulletins', stateKey: 'bulletins' },
+      { name: 'snacks', stateKey: 'snacks' },
+      { name: 'snackRequests', stateKey: 'snackRequests' },
+      { name: 'schedules', stateKey: 'schedules' },
+      { name: 'scheduleMemos', stateKey: 'scheduleMemos' }
+    ];
+
+    collections.forEach(({ name, stateKey }) => {
+      onSnapshot(collection(db, name), (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        if (missionType === 'attendance') {
-          extraAttendance = 1;
-        } else if (missionType === 'offering') {
-          extraOffering = 1;
-        } else if (missionType === 'bible') {
-          extraBible = 1;
-          extraDalant = 2; // 요절 암송은 2달란트!
+        // 시간순 정렬 등 특정 컬렉션에 대한 후처리
+        if (stateKey === 'notices' || stateKey === 'albums' || stateKey === 'bulletins') {
+          data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        } else if (stateKey === 'messages') {
+          data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        } else if (stateKey === 'schedules') {
+          data.sort((a, b) => a.time.localeCompare(b.time));
+        } else if (stateKey === 'snacks') {
+          data.sort((a, b) => {
+            const numA = parseInt(a.week) || 0;
+            const numB = parseInt(b.week) || 0;
+            return numA - numB;
+          });
         }
         
-        return {
-          ...student,
-          dalant: student.dalant + extraDalant,
-          xp: student.xp + 50,
-          level: Math.floor((student.xp + 50) / 100) + 1, // 100XP당 1레벨업
-          attendanceCount: student.attendanceCount + extraAttendance,
-          offeringCount: student.offeringCount + extraOffering,
-          bibleCount: student.bibleCount + extraBible,
-          dailyMissions: {
-            ...student.dailyMissions,
-            [missionType]: {
-              ...student.dailyMissions[missionType],
-              status: 'completed'
-            }
-          }
-        };
-      }
-      return student;
+        set({ [stateKey]: data });
+      });
     });
-    
-    set({ students: updatedStudents });
-    setLocalStorage('jc_students', updatedStudents);
+  },
+
+  // ==========================================
+  // Firebase 뮤테이션 함수들
+  // ==========================================
+
+  // 1-1. 학생 프로필 업데이트
+  updateStudentProfile: async (studentId, updates) => {
+    try {
+      await updateDoc(doc(db, "students", studentId), updates);
+      
+      const current = get().currentUser;
+      if (current.role === 'student' && current.id === studentId && updates.name) {
+        const newUser = { ...current, name: updates.name };
+        set({ currentUser: newUser });
+        setLocalStorage('jc_current_user', newUser);
+      }
+    } catch (e) { console.error(e); }
   },
   
-  // 4. 일일 미션 반려/취소 (교사용)
-  rejectMission: (studentId, missionType) => {
-    const updatedStudents = get().students.map(student => {
-      if (student.id === studentId) {
-        return {
-          ...student,
-          dailyMissions: {
-            ...student.dailyMissions,
-            [missionType]: {
-              status: 'none',
-              textContent: '',
-              submittedAt: null
-            }
-          }
-        };
-      }
-      return student;
-    });
-    
-    set({ students: updatedStudents });
-    setLocalStorage('jc_students', updatedStudents);
+  // 2. 일일 미션 제출
+  submitMission: async (studentId, missionType, textContent = '') => {
+    try {
+      const student = get().students.find(s => s.id === studentId);
+      if (!student) return;
+      const now = new Date().toLocaleString();
+      const dailyMissions = student.dailyMissions || {};
+      
+      await updateDoc(doc(db, "students", studentId), {
+        [`dailyMissions.${missionType}`]: {
+          status: 'pending',
+          textContent: textContent,
+          submittedAt: now
+        }
+      });
+    } catch (e) { console.error(e); }
   },
   
-  // 5. 달란트 직접 지급/차감 (교사 선물 수여 등)
-  adjustDalant: (studentId, amount, reason = '') => {
-    const updatedStudents = get().students.map(student => {
-      if (student.id === studentId) {
-        const newDalant = Math.max(0, student.dalant + amount);
-        return {
-          ...student,
-          dalant: newDalant
-        };
-      }
-      return student;
-    });
-    
-    set({ students: updatedStudents });
-    setLocalStorage('jc_students', updatedStudents);
-    
-    // 알림 메시지 자동 전송
-    const student = get().students.find(s => s.id === studentId);
-    if (student) {
+  // 3. 일일 미션 승인
+  approveMission: async (studentId, missionType) => {
+    try {
+      const student = get().students.find(s => s.id === studentId);
+      if (!student) return;
+      
+      let extraAttendance = 0;
+      let extraOffering = 0;
+      let extraBible = 0;
+      let extraDalant = 1;
+      
+      if (missionType === 'attendance') extraAttendance = 1;
+      else if (missionType === 'offering') extraOffering = 1;
+      else if (missionType === 'bible') { extraBible = 1; extraDalant = 2; }
+      
+      const newXp = (student.xp || 0) + 50;
+      
+      await updateDoc(doc(db, "students", studentId), {
+        dalant: (student.dalant || 0) + extraDalant,
+        xp: newXp,
+        level: Math.floor(newXp / 100) + 1,
+        attendanceCount: (student.attendanceCount || 0) + extraAttendance,
+        offeringCount: (student.offeringCount || 0) + extraOffering,
+        bibleCount: (student.bibleCount || 0) + extraBible,
+        [`dailyMissions.${missionType}.status`]: 'completed'
+      });
+    } catch (e) { console.error(e); }
+  },
+  
+  // 4. 일일 미션 반려
+  rejectMission: async (studentId, missionType) => {
+    try {
+      await updateDoc(doc(db, "students", studentId), {
+        [`dailyMissions.${missionType}`]: {
+          status: 'none',
+          textContent: '',
+          submittedAt: null
+        }
+      });
+    } catch (e) { console.error(e); }
+  },
+  
+  // 5. 달란트 조정
+  adjustDalant: async (studentId, amount, reason = '') => {
+    try {
+      const student = get().students.find(s => s.id === studentId);
+      if (!student) return;
+      
+      const newDalant = Math.max(0, (student.dalant || 0) + amount);
+      await updateDoc(doc(db, "students", studentId), { dalant: newDalant });
+      
       get().sendMessage(
         studentId,
         'teacher1',
         '박사랑 선생님',
         `🎁 달란트가 변동되었습니다! [${amount > 0 ? '+' : ''}${amount} 달란트] 사유: ${reason}`
       );
-    }
+    } catch (e) { console.error(e); }
   },
   
-  // 6. 알림장 추가 (교사)
-  addNotice: (title, content) => {
-    const now = new Date().toISOString().split('T')[0];
-    const newNotice = {
-      id: Date.now(),
-      title,
-      content,
-      writer: '박사랑 선생님',
-      createdAt: now,
-      comments: []
-    };
-    
-    const updatedNotices = [newNotice, ...get().notices];
-    set({ notices: updatedNotices });
-    setLocalStorage('jc_notices', updatedNotices);
+  // 6. 알림장 추가
+  addNotice: async (title, content) => {
+    try {
+      const now = new Date().toISOString().split('T')[0];
+      await setDoc(doc(db, "notices", `notice_${Date.now()}`), {
+        title,
+        content,
+        writer: '박사랑 선생님',
+        createdAt: now,
+        comments: []
+      });
+    } catch (e) { console.error(e); }
   },
   
   // 7. 알림장에 댓글 달기
-  addCommentToNotice: (noticeId, writer, content) => {
-    const updatedNotices = get().notices.map(notice => {
-      if (notice.id === noticeId) {
-        const newComment = {
-          id: Date.now(),
-          writer,
-          content,
-          createdAt: new Date().toLocaleString()
-        };
-        return {
-          ...notice,
-          comments: [...notice.comments, newComment]
-        };
-      }
-      return notice;
-    });
-    
-    set({ notices: updatedNotices });
-    setLocalStorage('jc_notices', updatedNotices);
+  addCommentToNotice: async (noticeId, writer, content) => {
+    try {
+      const notice = get().notices.find(n => n.id === noticeId);
+      if (!notice) return;
+      
+      const newComment = {
+        id: `comment_${Date.now()}`,
+        writer,
+        content,
+        createdAt: new Date().toISOString()
+      };
+      
+      await updateDoc(doc(db, "notices", noticeId), {
+        comments: [...(notice.comments || []), newComment]
+      });
+    } catch (e) { console.error(e); }
   },
   
-  // 8. 활동 사진 앨범 추가 (교사)
-  addAlbum: (title, imageUrl) => {
-    const now = new Date().toISOString().split('T')[0];
-    const newAlbum = {
-      id: Date.now(),
-      title,
-      writer: '박사랑 선생님',
-      createdAt: now,
-      likes: 0,
-      likedBy: [],
-      image: imageUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1000',
-      comments: []
-    };
-    
-    const updatedAlbums = [newAlbum, ...get().albums];
-    set({ albums: updatedAlbums });
-    setLocalStorage('jc_albums', updatedAlbums);
+  // 8. 활동 사진 앨범 추가
+  addAlbum: async (title, imageUrl) => {
+    try {
+      const now = new Date().toISOString().split('T')[0];
+      await setDoc(doc(db, "albums", `album_${Date.now()}`), {
+        title,
+        writer: '박사랑 선생님',
+        createdAt: now,
+        likes: 0,
+        likedBy: [],
+        image: imageUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1000',
+        comments: []
+      });
+    } catch (e) { console.error(e); }
   },
   
   // 9. 앨범 좋아요 누르기
-  likeAlbum: (albumId, userId) => {
-    const updatedAlbums = get().albums.map(album => {
-      if (album.id === albumId) {
-        const hasLiked = album.likedBy.includes(userId);
-        const newLikedBy = hasLiked 
-          ? album.likedBy.filter(id => id !== userId)
-          : [...album.likedBy, userId];
+  likeAlbum: async (albumId, userId) => {
+    try {
+      const album = get().albums.find(a => a.id === albumId);
+      if (!album) return;
+      
+      const hasLiked = (album.likedBy || []).includes(userId);
+      const newLikedBy = hasLiked 
+        ? album.likedBy.filter(id => id !== userId)
+        : [...(album.likedBy || []), userId];
         
-        return {
-          ...album,
-          likes: hasLiked ? album.likes - 1 : album.likes + 1,
-          likedBy: newLikedBy
-        };
-      }
-      return album;
-    });
-    
-    set({ albums: updatedAlbums });
-    setLocalStorage('jc_albums', updatedAlbums);
+      await updateDoc(doc(db, "albums", albumId), {
+        likes: hasLiked ? album.likes - 1 : album.likes + 1,
+        likedBy: newLikedBy
+      });
+    } catch (e) { console.error(e); }
+  },
+  
+  // 9-2. 앨범에 댓글 달기
+  addCommentToAlbum: async (albumId, writer, content) => {
+    try {
+      const album = get().albums.find(a => a.id === albumId);
+      if (!album) return;
+      
+      const newComment = {
+        id: `comment_${Date.now()}`,
+        writer,
+        content,
+        createdAt: new Date().toISOString()
+      };
+      
+      await updateDoc(doc(db, "albums", albumId), {
+        comments: [...(album.comments || []), newComment]
+      });
+    } catch (e) { console.error(e); }
   },
   
   // 10. 1:1 톡 메시지 발송
-  sendMessage: (studentId, senderId, senderName, content, scheduledFor = null, imageUrl = null) => {
-    const newMsg = {
-      id: Date.now(),
-      studentId,
-      senderId,
-      senderName,
-      content,
-      isRead: false,
-      scheduledFor, // 예약 발송 시간
-      imageUrl, // 첨부된 이미지 URL
-      timestamp: new Date().toLocaleString()
-    };
-    
-    const updatedMessages = [...get().messages, newMsg];
-    set({ messages: updatedMessages });
-    setLocalStorage('jc_messages', updatedMessages);
+  sendMessage: async (studentId, senderId, senderName, content, scheduledFor = null, imageUrl = null) => {
+    try {
+      await setDoc(doc(db, "messages", `msg_${Date.now()}`), {
+        studentId,
+        senderId,
+        senderName,
+        content,
+        isRead: false,
+        scheduledFor,
+        imageUrl,
+        timestamp: new Date().toISOString()
+      });
+    } catch (e) { console.error(e); }
   },
 
   // 11. 메시지 읽음 처리
-  markMessagesAsRead: (studentId, role) => {
-    const updatedMessages = get().messages.map(msg => {
-      // 해당 대화방에서 내가 보낸 메시지가 아닌 것을 읽음 처리
-      if (msg.studentId === studentId) {
-        if (role === 'teacher' && msg.senderId !== 'teacher1') {
-          return { ...msg, isRead: true };
-        } else if (role === 'student' && msg.senderId === 'teacher1') {
-          return { ...msg, isRead: true };
+  markMessagesAsRead: async (studentId, role) => {
+    try {
+      const messagesToUpdate = get().messages.filter(msg => {
+        if (msg.studentId === studentId && !msg.isRead) {
+          if (role === 'teacher' && msg.senderId !== 'teacher1') return true;
+          if (role === 'student' && msg.senderId === 'teacher1') return true;
         }
+        return false;
+      });
+      
+      // 여러 개의 메시지를 한번에 업데이트
+      for (const msg of messagesToUpdate) {
+        await updateDoc(doc(db, "messages", msg.id), { isRead: true });
       }
-      return msg;
-    });
-    set({ messages: updatedMessages });
-    setLocalStorage('jc_messages', updatedMessages);
+    } catch (e) { console.error(e); }
   },
 
   // 12. 주보 관리
-  addBulletin: (title, content, imageUrl = null) => {
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    
-    const newBulletin = {
-      id: Date.now(),
-      title,
-      content,
-      imageUrl,
-      writer: get().currentUser?.name || '선생님',
-      createdAt: formattedDate,
-    };
-    
-    const updatedBulletins = [newBulletin, ...get().bulletins];
-    set({ bulletins: updatedBulletins });
-    setLocalStorage('jc_bulletins', updatedBulletins);
+  addBulletin: async (title, content, imageUrl = null) => {
+    try {
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      await setDoc(doc(db, "bulletins", `bulletin_${Date.now()}`), {
+        title,
+        content,
+        imageUrl,
+        writer: get().currentUser?.name || '선생님',
+        createdAt: formattedDate,
+      });
+    } catch (e) { console.error(e); }
   },
 
-  deleteBulletin: (id) => {
-    const updatedBulletins = get().bulletins.filter(b => b.id !== id);
-    set({ bulletins: updatedBulletins });
-    setLocalStorage('jc_bulletins', updatedBulletins);
+  deleteBulletin: async (id) => {
+    try {
+      await deleteDoc(doc(db, "bulletins", id));
+    } catch (e) { console.error(e); }
+  },
+
+  // 13. 간식 후원 신청
+  addSnackRequest: async (studentId, studentName, message) => {
+    try {
+      await setDoc(doc(db, "snackRequests", `req_${Date.now()}`), {
+        studentId,
+        studentName,
+        message,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+    } catch (e) { console.error(e); }
+  },
+
+  // 14. 간식 메뉴 업데이트
+  updateSnackMenu: async (snackId, updates) => {
+    try {
+      await updateDoc(doc(db, "snacks", snackId), updates);
+    } catch (e) { console.error(e); }
+  },
+
+  // 15. 주일 일정 관리
+  updateSchedule: async (scheduleId, updates) => {
+    try {
+      await updateDoc(doc(db, "schedules", scheduleId), updates);
+    } catch (e) { console.error(e); }
+  },
+
+  addSchedule: async (newSchedule) => {
+    try {
+      await setDoc(doc(db, "schedules", `schedule_${Date.now()}`), newSchedule);
+    } catch (e) { console.error(e); }
+  },
+
+  deleteSchedule: async (scheduleId) => {
+    try {
+      await deleteDoc(doc(db, "schedules", scheduleId));
+    } catch (e) { console.error(e); }
+  },
+
+  // 16. 주일 일정 메모
+  addScheduleMemo: async (studentId, studentName, message) => {
+    try {
+      await setDoc(doc(db, "scheduleMemos", `memo_${Date.now()}`), {
+        studentId,
+        studentName,
+        message,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+    } catch (e) { console.error(e); }
+  },
+
+  markScheduleMemoAsRead: async (memoId) => {
+    try {
+      await updateDoc(doc(db, "scheduleMemos", memoId), { isRead: true });
+    } catch (e) { console.error(e); }
+  },
+
+  // 17. 학생 결석 사유 및 심방 노트 업데이트
+  updateStudentNote: async (studentId, noteType, content) => {
+    try {
+      await updateDoc(doc(db, "students", studentId), {
+        [noteType]: content
+      });
+    } catch (e) { console.error(e); }
+  },
+
+  // 18. 교사 미션 상세 피드백 추가
+  addMissionFeedback: async (studentId, missionType, feedback) => {
+    try {
+      await updateDoc(doc(db, "students", studentId), {
+        [`dailyMissions.${missionType}.teacherFeedback`]: feedback
+      });
+    } catch (e) { console.error(e); }
   }
 }));

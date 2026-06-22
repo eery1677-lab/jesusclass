@@ -2,41 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { X, Camera, Save, Smile, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-export default function ProfileEditModal({ isOpen, onClose }) {
-  const { currentUser, students, updateStudentProfile, churchName: storeChurchName, updateChurchName } = useStore();
-  const student = students.find(s => s.id === currentUser?.id);
+export default function TeacherProfileEditModal({ isOpen, onClose }) {
+  const { currentUser, teacherSettings, updateTeacherSettings } = useStore();
 
   const [name, setName] = useState('');
-  const [grade, setGrade] = useState('');
+  const [className, setClassName] = useState('');
   const [avatar, setAvatar] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [allergyInput, setAllergyInput] = useState('');
-  const [allergies, setAllergies] = useState([]);
-  const [churchName, setChurchName] = useState('');
   const [showAvatars, setShowAvatars] = useState(false);
 
   useEffect(() => {
-    if (isOpen && student) {
-      setName(student.name);
-      setGrade(student.grade);
-      setAvatar(student.avatar || '👦');
-      setImageUrl(student.imageUrl || '');
-      setAllergies(student.allergy || []);
-      setChurchName(storeChurchName || '교회학교');
+    if (isOpen) {
+      setName(teacherSettings.name || currentUser.name || '박사랑 선생님');
+      setClassName(teacherSettings.className || '열매 맺는 반');
+      setAvatar(teacherSettings.avatar || '👩‍🏫');
+      setImageUrl(teacherSettings.imageUrl || '');
     }
-  }, [isOpen, student, storeChurchName]);
+  }, [isOpen, teacherSettings, currentUser]);
 
-  if (!isOpen || currentUser?.role !== 'student' || !student) return null;
+  if (!isOpen || currentUser?.role !== 'teacher') return null;
 
-  const avatars = ['👦', '👧', '🧒', '👶', '🧑', '👨', '👩', '👱', '👼', '🦸', '🧚', '🦁', '🐻', '🐼', '🐰'];
-
-  const handleAddAllergy = (e) => {
-    e.preventDefault();
-    if (allergyInput.trim() && !allergies.includes(allergyInput.trim())) {
-      setAllergies([...allergies, allergyInput.trim()]);
-      setAllergyInput('');
-    }
-  };
+  const avatars = ['👨‍🏫', '👩‍🏫', '🧑‍🏫', '🦁', '🐻', '🐼', '🐰', '🐯', '🦊', '🐱', '🐶', '🐹', '🐨', '🐢', '🦖'];
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -53,7 +39,6 @@ export default function ProfileEditModal({ isOpen, onClose }) {
           let width = img.width;
           let height = img.height;
           
-          // 최대 크기를 300px로 제한
           const MAX_SIZE = 300;
           if (width > height) {
             if (width > MAX_SIZE) {
@@ -72,7 +57,6 @@ export default function ProfileEditModal({ isOpen, onClose }) {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
           
-          // JPEG 형식으로 압축 (품질 0.8)
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           setImageUrl(dataUrl);
           setAvatar('');
@@ -83,30 +67,22 @@ export default function ProfileEditModal({ isOpen, onClose }) {
     }
   };
 
-  const handleRemoveAllergy = (item) => {
-    setAllergies(allergies.filter(a => a !== item));
-  };
-
   const handleSave = (e) => {
     e.preventDefault();
-    updateStudentProfile(student.id, {
+    updateTeacherSettings({
       name,
-      grade,
+      className,
       avatar,
-      imageUrl,
-      allergy: allergies
+      imageUrl
     });
-    if (churchName !== storeChurchName) {
-      updateChurchName(churchName);
-    }
     onClose();
   };
 
   return (
     <div style={styles.backdrop}>
-      <div style={styles.modal}>
+      <div style={styles.modal} className="animate-fade-up">
         <div style={styles.header}>
-          <h2 style={{ fontSize: '1.2rem', margin: 0 }}>프로필 수정</h2>
+          <h2 style={{ fontSize: '1.2rem', margin: 0 }}>교사 프로필 수정</h2>
           <button onClick={onClose} style={styles.closeBtn}>
             <X size={24} />
           </button>
@@ -122,11 +98,11 @@ export default function ProfileEditModal({ isOpen, onClose }) {
                   avatar
                 )}
               </div>
-              <button type="button" onClick={() => document.getElementById('profile-upload').click()} style={styles.uploadBtn}>
+              <button type="button" onClick={() => document.getElementById('teacher-profile-upload').click()} style={styles.uploadBtn}>
                 <Camera size={16} color="white" />
               </button>
               <input 
-                id="profile-upload" 
+                id="teacher-profile-upload" 
                 type="file" 
                 accept="image/*" 
                 onChange={handleImageUpload} 
@@ -161,62 +137,25 @@ export default function ProfileEditModal({ isOpen, onClose }) {
 
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>교회 (또는 부서) 이름</label>
-              <input 
-                type="text" 
-                value={churchName} 
-                onChange={e => setChurchName(e.target.value)}
-                style={styles.input}
-                placeholder="예: 양정교회"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>이름</label>
+              <label style={styles.label}>이름 (직분 포함)</label>
               <input 
                 type="text" 
                 value={name} 
                 onChange={e => setName(e.target.value)}
                 style={styles.input}
+                placeholder="예: 박사랑 선생님"
               />
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>반(소속)</label>
+              <label style={styles.label}>맡은 반 이름</label>
               <input 
                 type="text" 
-                value={grade} 
-                onChange={e => setGrade(e.target.value)}
+                value={className} 
+                onChange={e => setClassName(e.target.value)}
                 style={styles.input}
+                placeholder="예: 열매 맺는 반"
               />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>알레르기 정보</label>
-              <div style={styles.allergyFormWrapper}>
-                <input 
-                  type="text" 
-                  value={allergyInput}
-                  onChange={(e) => setAllergyInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAllergy(e); } }}
-                  placeholder="예: 땅콩, 복숭아, 우유" 
-                  style={{...styles.input, flex: 1}}
-                />
-                <button type="button" style={styles.addBtn} onClick={handleAddAllergy}>추가</button>
-              </div>
-              <div style={styles.allergyTags}>
-                {allergies.map(item => (
-                  <div key={item} style={styles.allergyTag}>
-                    {item} 
-                    <button type="button" style={styles.tagRemoveBtn} onClick={() => handleRemoveAllergy(item)}>
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-                {allergies.length === 0 && (
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>등록된 알레르기가 없습니다.</div>
-                )}
-              </div>
             </div>
 
             <button type="submit" style={styles.saveBtn}>
@@ -345,45 +284,6 @@ const styles = {
     fontWeight: 600,
     cursor: 'pointer',
     marginTop: '5px'
-  },
-  allergyFormWrapper: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '12px',
-  },
-  addBtn: {
-    background: 'var(--bg-main)',
-    color: 'var(--text-main)',
-    border: '1.5px solid var(--border-input)',
-    padding: '0 16px',
-    borderRadius: 'var(--radius-sm)',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  allergyTags: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-  },
-  allergyTag: {
-    background: 'rgba(244, 63, 94, 0.1)',
-    color: '#F43F5E',
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  tagRemoveBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#F43F5E',
-    padding: 0,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
   },
   formGroup: {
     display: 'flex',

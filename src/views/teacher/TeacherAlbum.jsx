@@ -22,11 +22,25 @@ const PRESET_IMAGES = [
 ];
 
 export default function TeacherAlbum({ setActiveTab }) {
-  const { albums, addAlbum, likeAlbum, currentUser } = useStore();
+  const { albums, addAlbum, likeAlbum, addCommentToAlbum, currentUser } = useStore();
   const [newTitle, setNewTitle] = useState('');
   const [selectedImage, setSelectedImage] = useState(PRESET_IMAGES[0].url);
   const [customImage, setCustomImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [commentInputs, setCommentInputs] = useState({});
+
+  const handleCommentChange = (albumId, value) => {
+    setCommentInputs(prev => ({...prev, [albumId]: value}));
+  };
+
+  const handleCommentSubmit = (e, albumId) => {
+    e.preventDefault();
+    const content = commentInputs[albumId];
+    if (content && content.trim()) {
+      addCommentToAlbum(albumId, currentUser.name, content.trim());
+      setCommentInputs(prev => ({...prev, [albumId]: ''}));
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -94,8 +108,8 @@ export default function TeacherAlbum({ setActiveTab }) {
         </button>
         <Camera size={24} style={{ color: 'var(--primary)' }} />
         <div>
-          <h2>📸 주일학교 활동 사진 업로드 & 관리</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#EC4899' }}>📸 주일학교 활동 사진 업로드 & 관리</h2>
+          <p style={{ margin: 0, marginTop: '4px', color: 'var(--text-muted)', fontSize: '0.9rem', wordBreak: 'keep-all', lineHeight: '1.4' }}>
             매주일 아이들의 예배 활동, 야외 탐방, 성경 공부 사진을 업로드해 학부모님들께 공유하세요!
           </p>
         </div>
@@ -186,8 +200,48 @@ export default function TeacherAlbum({ setActiveTab }) {
                   <div style={styles.metaRow}>
                     <span style={styles.metaItem}><Calendar size={12} /><span>{album.createdAt}</span></span>
                     <span style={styles.metaItem}><Heart size={12} fill="var(--accent-danger)" style={{ color: 'var(--accent-danger)' }} /><span>좋아요 {album.likes}개</span></span>
-                    <span style={styles.metaItem}><MessageSquare size={12} /><span>댓글 {album.comments.length}개</span></span>
+                    <span style={styles.metaItem}><MessageSquare size={12} /><span>댓글 {album.comments?.length || 0}개</span></span>
                   </div>
+
+                  {/* Show existing comments */}
+                  {album.comments && album.comments.length > 0 && (
+                    <div style={styles.miniComments}>
+                      {album.comments.map(c => (
+                        <div key={c.id} style={styles.miniCommentItem}>
+                          <strong style={{ color: 'var(--text-main)' }}>{c.writer}</strong> 
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '6px' }}>{c.content}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Comment Input */}
+                  <form style={styles.commentForm} onSubmit={(e) => handleCommentSubmit(e, album.id)}>
+                    <input 
+                      type="text" 
+                      placeholder="선생님도 따뜻한 댓글을 남겨보세요..." 
+                      className="neon-input"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        width: '100%',
+                        background: 'var(--bg-main)',
+                        padding: '8px 16px',
+                        fontSize: '0.9rem',
+                        border: '1px solid var(--border-input)',
+                        borderRadius: '20px',
+                      }}
+                      value={commentInputs[album.id] || ''}
+                      onChange={(e) => handleCommentChange(album.id, e.target.value)}
+                    />
+                    <button 
+                      type="submit" 
+                      style={styles.commentSubmitBtn(!!commentInputs[album.id]?.trim())}
+                      disabled={!commentInputs[album.id]?.trim()}
+                    >
+                      <Send size={16} />
+                    </button>
+                  </form>
                 </div>
               </article>
             );
@@ -207,10 +261,10 @@ const styles = {
   headerPanel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    padding: '24px 32px',
-    background: 'white',
-    borderRadius: '16px',
+    gap: '12px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #FDF2F8 0%, #ffffff 100%)',
+    borderLeft: '4px solid #EC4899',
   },
   section: {
     padding: '16px',
@@ -308,5 +362,40 @@ const styles = {
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.2s',
-  }
+  },
+  miniComments: {
+    marginTop: '12px',
+    background: '#F9FAFB',
+    borderRadius: 'var(--radius-sm)',
+    padding: '10px 14px',
+    fontSize: '0.85rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  miniCommentItem: {
+    lineHeight: 1.4,
+    fontSize: '0.9rem',
+  },
+  commentForm: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '12px',
+    borderTop: '1px solid var(--border-color)',
+    paddingTop: '12px',
+  },
+  commentSubmitBtn: (isActive) => ({
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    background: 'var(--primary)',
+    border: 'none',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: isActive ? 'pointer' : 'default',
+    opacity: isActive ? 1 : 0.5,
+    transition: 'all 0.2s',
+  })
 };

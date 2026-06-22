@@ -36,8 +36,8 @@ export default function TeacherNotices({ setActiveTab }) {
         </button>
         <BookOpen size={24} style={{ color: 'var(--primary)' }} />
         <div>
-          <h2>📢 주간 알림장 작성 & 관리</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#3B82F6' }}>📢 주간 알림장 작성 & 관리</h2>
+          <p style={{ margin: 0, marginTop: '4px', color: 'var(--text-muted)', fontSize: '0.9rem', wordBreak: 'keep-all', lineHeight: '1.4' }}>
             새로운 공지사항과 성경 암송 요절을 등록하고 학부모 및 학생들과 댓글로 실시간 의견을 나눠보세요.
           </p>
         </div>
@@ -207,10 +207,10 @@ const styles = {
   headerPanel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    padding: '24px 32px',
-    background: 'white',
-    borderRadius: '16px',
+    gap: '12px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #EFF6FF 0%, #ffffff 100%)',
+    borderLeft: '4px solid #3B82F6',
   },
   section: {
     padding: '16px',

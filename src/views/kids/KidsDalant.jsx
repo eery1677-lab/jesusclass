@@ -56,7 +56,7 @@ export default function KidsDalant({ setActiveTab }) {
         </div>
       </header>
 
-      <div style={styles.totalCard} className="card-solid">
+      <div style={styles.totalCard} className="card-solid hover-lift">
         <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
           사용 가능한 달란트
         </div>
@@ -66,7 +66,7 @@ export default function KidsDalant({ setActiveTab }) {
         </div>
       </div>
 
-      <div style={styles.section}>
+      <div style={styles.section} className="card-solid hover-lift">
         <div style={styles.sectionTitle}>
           <History size={18} color="var(--primary)" /> 
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>획득 / 사용 내역</h3>
@@ -142,11 +142,7 @@ const styles = {
     boxShadow: '0 10px 15px -3px rgba(245, 158, 11, 0.3)',
   },
   section: {
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid var(--border-color)',
   },
   sectionTitle: {
     display: 'flex',

@@ -3,7 +3,7 @@ import { Utensils, Heart, ThumbsUp, ChevronLeft, Send } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
 export default function KidsSnack({ setActiveTab }) {
-  const { currentUser, students } = useStore();
+  const { currentUser, students, snacks, addSnackRequest } = useStore();
   const student = students.find(s => s.id === currentUser.id);
   const [sponsorMsg, setSponsorMsg] = useState('');
   const [hasApplied, setHasApplied] = useState(false);
@@ -11,17 +11,11 @@ export default function KidsSnack({ setActiveTab }) {
   const handleSponsorSubmit = (e) => {
     e.preventDefault();
     if (sponsorMsg.trim()) {
+      addSnackRequest(currentUser.id, student?.name || currentUser.name, sponsorMsg);
       setHasApplied(true);
       setSponsorMsg('');
     }
   };
-
-  const snacks = [
-    { week: '1주차', date: '6월 6일', menu: '햄버거 세트, 과일 주스', sponsor: '김예찬 학생 가정', emoji: '🍔' },
-    { week: '2주차', date: '6월 13일', menu: '피자, 콜라', sponsor: '이하늘 학생 가정', emoji: '🍕' },
-    { week: '3주차', date: '6월 20일 (이번주)', menu: '샌드위치, 우유', sponsor: '주일학교 교사 일동', emoji: '🥪', isCurrent: true },
-    { week: '4주차', date: '6월 27일', menu: '떡볶이, 튀김', sponsor: '박준영 학생 가정', emoji: '떡' },
-  ];
 
   return (
     <div style={styles.container}>
@@ -41,7 +35,7 @@ export default function KidsSnack({ setActiveTab }) {
       </header>
 
       {student?.allergy?.length > 0 && (
-        <div style={styles.allergyAlert}>
+        <div style={styles.allergyAlert} className="hover-glow-gray">
           <div style={styles.allergyTitle}>⚠️ 알레르기 주의</div>
           <div style={styles.allergyText}>
             등록된 알레르기: <strong>{student.allergy.join(', ')}</strong><br/>
@@ -52,7 +46,7 @@ export default function KidsSnack({ setActiveTab }) {
 
       <div style={styles.list}>
         {snacks.map((item, idx) => (
-          <div key={idx} style={{...styles.card, border: item.isCurrent ? '2px solid var(--primary)' : '1px solid var(--border-color)'}} className="hover-lift">
+          <div key={idx} style={{...styles.card, ...(item.isCurrent ? {border: '2px solid #F43F5E'} : {})}} className="card-solid hover-lift">
             {item.isCurrent && <div style={styles.currentBadge}>이번 주 간식</div>}
             
             <div style={styles.cardHeader}>
@@ -78,7 +72,7 @@ export default function KidsSnack({ setActiveTab }) {
         ))}
       </div>
 
-      <div style={styles.sponsorFormSection}>
+      <div style={styles.sponsorFormSection} className="card-solid hover-lift">
         <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 700 }}>간식 후원 신청하기</h3>
         {hasApplied ? (
           <div style={styles.appliedMsg}>
@@ -90,7 +84,11 @@ export default function KidsSnack({ setActiveTab }) {
             <input 
               type="text" 
               placeholder="예: 7월 1주차 간식을 섬기고 싶습니다." 
-              style={styles.sponsorInput}
+              className="neon-input"
+              style={{
+                ...styles.sponsorInput,
+                transition: 'var(--transition-smooth)'
+              }}
               value={sponsorMsg}
               onChange={e => setSponsorMsg(e.target.value)}
             />
@@ -145,8 +143,10 @@ const styles = {
     justifyContent: 'center',
   },
   allergyAlert: {
-    background: 'rgba(244, 63, 94, 0.1)',
+    background: 'rgba(244, 63, 94, 0.05)',
+    border: '1px solid #F43F5E',
     borderLeft: '4px solid #F43F5E',
+    boxShadow: 'var(--shadow-sm)',
     padding: '16px',
     borderRadius: 'var(--radius-md)',
     marginBottom: '24px',
@@ -168,23 +168,20 @@ const styles = {
     gap: '16px',
   },
   card: {
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
     position: 'relative',
-    boxShadow: 'var(--shadow-sm)',
   },
   currentBadge: {
     position: 'absolute',
     top: '-10px',
     right: '20px',
-    background: 'var(--primary)',
+    background: '#F43F5E',
     color: 'white',
     padding: '4px 12px',
     borderRadius: '20px',
     fontSize: '0.75rem',
     fontWeight: 800,
-    boxShadow: '0 4px 6px -1px rgba(123, 61, 255, 0.3)',
+    boxShadow: '0 4px 6px -1px rgba(244, 63, 94, 0.3)',
   },
   cardHeader: {
     display: 'flex',
@@ -241,11 +238,7 @@ const styles = {
   },
   sponsorFormSection: {
     marginTop: '32px',
-    background: 'var(--bg-card)',
-    borderRadius: 'var(--radius-lg)',
     padding: '16px',
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid var(--border-color)',
   },
   sponsorForm: {
     display: 'flex',
@@ -264,14 +257,14 @@ const styles = {
     width: '44px',
     height: '44px',
     borderRadius: '50%',
-    background: isActive ? 'var(--primary)' : 'var(--bg-main)',
-    border: isActive ? 'none' : '1px solid var(--border-input)',
-    color: isActive ? 'white' : 'var(--text-muted)',
+    background: isActive ? 'var(--primary)' : 'rgba(16, 185, 129, 0.15)',
+    color: isActive ? 'white' : 'rgba(16, 185, 129, 0.6)',
+    border: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: isActive ? 'pointer' : 'default',
-    transition: 'all 0.2s',
+    transition: 'all 0.2s ease',
   }),
   appliedMsg: {
     background: 'var(--primary)',

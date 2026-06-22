@@ -34,17 +34,31 @@ export default function ChatModal({ isOpen, onClose }) {
     setShowEmojiPicker(false);
   };
 
-  const formatDateHeader = (dateStr) => {
-    const date = new Date(dateStr.split(' ')[0]);
+  const formatDateHeader = (timestamp) => {
+    if (!timestamp) return '날짜 정보 없음';
+    let date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+    
+    if (isNaN(date) && typeof timestamp === 'string') {
+      const match = timestamp.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+      if (match) {
+        date = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+      }
+    }
+    
+    if (isNaN(date)) return '날짜 정보 없음';
+    
     const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`;
   };
 
   // 대화방 자동 스크롤
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    const timer = setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages, activeChatStudentId, isOpen]);
 
   // 대기방 초기 선택 및 읽음 처리
@@ -156,19 +170,19 @@ export default function ChatModal({ isOpen, onClose }) {
 
   return (
     <div style={styles.backdrop}>
-      <div style={styles.modal} className="card-solid animate-fade-in">
+      <div style={styles.modal} className="card-solid animate-fade-in hover-lift">
         {/* Modal Header */}
-        <div style={styles.header}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <MessageSquare style={{ color: 'var(--primary)' }} />
-            <h3 style={{ margin: 0 }}>
+        <div style={{...styles.header, flexWrap: 'wrap', gap: '10px'}}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+            <MessageSquare size={20} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {currentUser.role === 'teacher' 
-                ? '💬 학부모/학생 1:1 상담실' 
-                : `💬 ${selectedStudent?.name || ''} 님 & 선생님 톡`}
+                ? '학부모/학생 상담실' 
+                : `${selectedStudent?.name || ''} 학생 상담실`}
             </h3>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             {currentUser.role === 'teacher' && (
               <button 
                 onClick={() => updateTeacherSettings({ dndEnabled: !teacherSettings.dndEnabled })}
@@ -179,18 +193,19 @@ export default function ChatModal({ isOpen, onClose }) {
                 }}
               >
                 <Moon size={14} />
-                <span>안식일 모드 {teacherSettings.dndEnabled ? 'ON' : 'OFF'}</span>
+                <span className="hide-on-mobile">안식일 </span>
+                <span>{teacherSettings.dndEnabled ? 'ON' : 'OFF'}</span>
               </button>
             )}
-            <button style={styles.closeBtn} onClick={onClose}><X size={20} /></button>
+            <button style={styles.closeBtn} onClick={onClose}><X size={24} /></button>
           </div>
         </div>
 
         {/* Modal Body */}
         <div style={styles.body}>
           {/* Teacher Side: Chat list on the left */}
-          {currentUser.role === 'teacher' && (
-            <div style={styles.studentList}>
+          {currentUser.role === 'teacher' && !activeChatStudentId && (
+            <div style={{...styles.studentList, width: '100%', borderRight: 'none'}}>
               <div style={styles.listTitle}>학생 대화방</div>
               {students.map(s => {
                 const studentMsgs = messages.filter(m => m.studentId === s.id);
@@ -222,7 +237,8 @@ export default function ChatModal({ isOpen, onClose }) {
           )}
 
           {/* Chat Room Area */}
-          <div style={styles.chatArea}>
+          {(currentUser.role === 'student' || activeChatStudentId) && (
+            <div style={styles.chatArea}>
             {currentUser.role === 'teacher' && selectedStudent && (
               <div style={styles.chatRoomHeader}>
                 <button style={styles.headerIconBtn} onClick={() => setActiveChatStudentId('')}>
@@ -230,7 +246,7 @@ export default function ChatModal({ isOpen, onClose }) {
                 </button>
                 <div style={styles.headerCenter}>
                   <strong style={{ fontSize: '1.05rem' }}>{selectedStudent.name} 학부모님</strong>
-                  <span style={styles.statusText}>● 하이톡 불가시간 ▾</span>
+                  <span style={styles.statusText}>● 지저스톡 불가시간 ▾</span>
                 </div>
                 <div style={{display: 'flex', gap: '8px'}}>
                   <button style={styles.headerIconBtn} onClick={() => alert('전체 공지사항 발송 기능은 준비중입니다.')} title="전체 공지 보내기">
@@ -249,7 +265,7 @@ export default function ChatModal({ isOpen, onClose }) {
                 </button>
                 <div style={styles.headerCenter}>
                   <strong style={{ fontSize: '1.05rem' }}>박사랑 선생님</strong>
-                  <span style={styles.statusText}>● 하이톡 불가시간 ▾</span>
+                  <span style={styles.statusText}>● 지저스톡 불가시간 ▾</span>
                 </div>
                 <div style={{width: 24}}></div>
               </div>
@@ -285,13 +301,22 @@ export default function ChatModal({ isOpen, onClose }) {
                     }
 
                     // 시간 포맷 (오전 08:52)
-                    const dateObj = new Date(msg.timestamp);
-                    let hours = dateObj.getHours();
-                    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-                    const ampm = hours >= 12 ? '오후' : '오전';
-                    hours = hours % 12;
-                    hours = hours ? hours : 12;
-                    const timeString = isNaN(hours) ? '방금 전' : `${ampm} ${hours.toString().padStart(2, '0')}:${minutes}`;
+                    let dateObj = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
+                    if (isNaN(dateObj) && typeof msg.timestamp === 'string') {
+                      const match = msg.timestamp.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+                      if (match) {
+                        dateObj = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]), parseInt(match[4]), parseInt(match[5]));
+                      }
+                    }
+                    let timeString = '방금 전';
+                    if (!isNaN(dateObj)) {
+                      let hours = dateObj.getHours();
+                      const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                      const ampm = hours >= 12 ? '오후' : '오전';
+                      hours = hours % 12;
+                      hours = hours ? hours : 12;
+                      timeString = `${ampm} ${hours.toString().padStart(2, '0')}:${minutes}`;
+                    }
                     
                     return (
                       <React.Fragment key={msg.id}>
@@ -438,6 +463,7 @@ export default function ChatModal({ isOpen, onClose }) {
               </form>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
@@ -474,7 +500,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '18px 24px',
+    padding: '16px 20px',
     borderBottom: '1px solid var(--border-color)',
     background: 'var(--bg-card)',
   },

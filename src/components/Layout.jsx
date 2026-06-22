@@ -21,7 +21,7 @@ import {
 import ProfileEditModal from './ProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, switchUser, churchName, churchContact, students } = useStore();
+  const { currentUser, logout, switchUser, churchName, churchContact, students } = useStore();
   const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
 
   // [Mobile] 하단 탭바 (하이클래스 스타일 - 바닥 고정, Solid White)
   const renderBottomNav = () => (
-    <nav style={styles.bottomNav} className="hide-on-desktop">
+    <nav style={styles.bottomNav} className="bottom-nav-container">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -103,7 +103,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               <button 
                 style={styles.roleBtn} 
                 onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
-                className="neon-logo-box hover-lift clickable-item"
+                className="neon-logo-box hover-lift-no-border"
               >
                 <div style={{...styles.avatarMini, overflow: 'hidden'}}>
                   {currentStudent?.imageUrl ? (
@@ -162,26 +162,26 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{currentUser.role === 'teacher' ? '유초등부 교사' : '유초등부 3학년'}</div>
                 </div>
               </div>
-              <div style={styles.moreMenuList}>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => setIsProfileModalOpen(true)}>
+              <div style={{ ...styles.moreMenuList, gap: '12px' }}>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => setIsProfileModalOpen(true)}>
                   <div style={styles.moreMenuIconWrapper}><User size={18} color="#4F46E5" /></div>
                   <span style={styles.moreMenuText}>내 프로필 관리</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => { setActiveTab('settings'); setIsMoreMenuOpen(false); }}>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => { setActiveTab('settings'); setIsMoreMenuOpen(false); }}>
                   <div style={styles.moreMenuIconWrapper}><Settings size={18} color="#10B981" /></div>
                   <span style={styles.moreMenuText}>앱 설정 / 알림</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
-                <button className="list-item-btn" style={styles.moreMenuItem} onClick={() => setIsContactModalOpen(true)}>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => setIsContactModalOpen(true)}>
                   <div style={styles.moreMenuIconWrapper}><HelpCircle size={18} color="#3B82F6" /></div>
                   <span style={styles.moreMenuText}>교회 연락처 및 오시는 길</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
               </div>
-              <button style={styles.logoutBtn} onClick={() => { 
+              <button style={styles.logoutBtn} onClick={async () => { 
                 if (window.confirm('정말 로그아웃 하시겠습니까?')) {
-                  switchUser(null);
+                  await logout();
                   setIsMoreMenuOpen(false);
                 }
               }}>
@@ -283,7 +283,7 @@ const styles = {
     height: '40px',
     borderRadius: '12px',
     background: 'transparent',
-    border: '2px solid rgba(16, 185, 129, 0.5)',
+    border: '2px solid rgba(141, 110, 99, 0.5)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -357,8 +357,10 @@ const styles = {
   bottomNav: {
     position: 'fixed',
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%',
+    maxWidth: '480px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -446,8 +448,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     padding: '16px 12px',
-    background: 'transparent',
+    background: 'var(--bg-main)',
+    borderRadius: '12px',
+    border: 'none',
+    borderBottom: '2px solid var(--border-light)',
     cursor: 'pointer',
+    transition: 'all 0.2s',
   },
   moreMenuIconWrapper: {
     width: '36px', height: '36px',
