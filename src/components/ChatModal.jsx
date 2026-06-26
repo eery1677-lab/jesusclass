@@ -75,8 +75,13 @@ export default function ChatModal({ isOpen, onClose }) {
     
     if (currentUser.role === 'teacher' && students.length > 0 && !activeChatStudentId) {
       setActiveChatStudentId(students[0].id);
-    } else if (currentUser.role === 'student') {
-      setActiveChatStudentId(currentUser.id);
+    } else if (currentUser.role === 'student' || currentUser.role === 'parent') {
+      // currentUser.id가 실제 student 문서 ID인지 확인
+      // initFirebaseListeners에서 id: userData.studentId || user.uid 로 설정됨
+      // students 목록에 있는 ID이면 그대로 사용, 없으면 첫번째 학생으로 fallback
+      const matchedStudent = students.find(s => s.id === currentUser.id);
+      const chatId = matchedStudent ? matchedStudent.id : (students[0]?.id || currentUser.id);
+      setActiveChatStudentId(chatId);
     }
     
     if (activeChatStudentId) {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Home,
   Bell,
@@ -16,12 +17,14 @@ import {
   MapPin,
   Phone,
   Mail,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import ProfileEditModal from './ProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, logout, switchUser, churchName, churchContact, students, generateChildCode, switchMode } = useStore();
+  const { currentUser, switchUser, churchName, churchContact, students } = useStore();
+  const { signOut } = useAuth();
   const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -226,7 +229,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               </div>
               <button style={styles.logoutBtn} onClick={async () => { 
                 if (window.confirm('정말 로그아웃 하시겠습니까?')) {
-                  await logout();
+                  await signOut();
                   setIsMoreMenuOpen(false);
                 }
               }}>

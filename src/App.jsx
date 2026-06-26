@@ -22,10 +22,11 @@ import ProfileEditModal from './components/ProfileEditModal';
 import SettingsView from './views/Settings';
 import Login from './views/auth/Login';
 import { useStore } from './store/useStore';
+import { AuthProvider } from './contexts/AuthContext';
 import BannerAd from './components/ads/BannerAd';
 import InterstitialAd from './components/ads/InterstitialAd';
 
-export default function App() {
+function AppContent() {
   const { currentUser, authLoading, initFirebaseListeners } = useStore();
   
   useEffect(() => {
@@ -44,73 +45,46 @@ export default function App() {
   const [navCount, setNavCount] = useState(0);
   const [showInterstitial, setShowInterstitial] = useState(false);
 
-  // 라우팅 변경 감지
   useEffect(() => {
     setNavCount(prev => prev + 1);
   }, [activeTab]);
 
-  // N회 화면 전환 시 전면 광고 노출
   useEffect(() => {
-    // 최초 마운트(1회) 제외, 4번 탭 이동할 때마다 광고 노출
     if (navCount > 1 && navCount % 4 === 0) {
       setShowInterstitial(true);
     }
   }, [navCount]);
 
-  // 현재 활성화된 탭에 맞춰서 뷰를 반환
   const renderView = () => {
     switch (activeTab) {
-      // 학생 모드 뷰
-      case 'kids-dashboard':
-        return <KidsDashboard setActiveTab={setActiveTab} />;
-      case 'kids-notices':
-        return <KidsNotices setActiveTab={setActiveTab} />;
-      case 'kids-album':
-        return <KidsAlbum setActiveTab={setActiveTab} />;
-      case 'kids-attendance':
-        return <KidsAttendance setActiveTab={setActiveTab} />;
-      case 'kids-dalant':
-        return <KidsDalant setActiveTab={setActiveTab} />;
-      case 'kids-memory-verse':
-        return <KidsMemoryVerse setActiveTab={setActiveTab} />;
-      case 'kids-schedule':
-        return <KidsSchedule setActiveTab={setActiveTab} />;
-      case 'kids-snack':
-        return <KidsSnack setActiveTab={setActiveTab} />;
-      case 'kids-bulletin':
-        return <KidsBulletin setActiveTab={setActiveTab} />;
-      
-      // 교사 모드 뷰
-      case 'teacher-dashboard':
-        return <TeacherDashboard setActiveTab={setActiveTab} />;
-      case 'teacher-notices':
-        return <TeacherNotices setActiveTab={setActiveTab} />;
-      case 'teacher-album':
-        return <TeacherAlbum setActiveTab={setActiveTab} />;
-      case 'teacher-attendance':
-        return <TeacherAttendance setActiveTab={setActiveTab} />;
-      case 'teacher-dalant':
-        return <TeacherDalant setActiveTab={setActiveTab} />;
-      case 'teacher-bulletin':
-        return <TeacherBulletin setActiveTab={setActiveTab} />;
-      case 'teacher-snack':
-        return <TeacherSnack setActiveTab={setActiveTab} />;
-      case 'teacher-schedule':
-        return <TeacherSchedule setActiveTab={setActiveTab} />;
-      
-      // 설정 뷰
-      case 'settings':
-        return <SettingsView />;
-      
-      default:
-        return <KidsDashboard />;
+      case 'kids-dashboard':    return <KidsDashboard setActiveTab={setActiveTab} />;
+      case 'kids-notices':      return <KidsNotices setActiveTab={setActiveTab} />;
+      case 'kids-album':        return <KidsAlbum setActiveTab={setActiveTab} />;
+      case 'kids-attendance':   return <KidsAttendance setActiveTab={setActiveTab} />;
+      case 'kids-dalant':       return <KidsDalant setActiveTab={setActiveTab} />;
+      case 'kids-memory-verse': return <KidsMemoryVerse setActiveTab={setActiveTab} />;
+      case 'kids-schedule':     return <KidsSchedule setActiveTab={setActiveTab} />;
+      case 'kids-snack':        return <KidsSnack setActiveTab={setActiveTab} />;
+      case 'kids-bulletin':     return <KidsBulletin setActiveTab={setActiveTab} />;
+      case 'teacher-dashboard': return <TeacherDashboard setActiveTab={setActiveTab} />;
+      case 'teacher-notices':   return <TeacherNotices setActiveTab={setActiveTab} />;
+      case 'teacher-album':     return <TeacherAlbum setActiveTab={setActiveTab} />;
+      case 'teacher-attendance':return <TeacherAttendance setActiveTab={setActiveTab} />;
+      case 'teacher-dalant':    return <TeacherDalant setActiveTab={setActiveTab} />;
+      case 'teacher-bulletin':  return <TeacherBulletin setActiveTab={setActiveTab} />;
+      case 'teacher-snack':     return <TeacherSnack setActiveTab={setActiveTab} />;
+      case 'teacher-schedule':  return <TeacherSchedule setActiveTab={setActiveTab} />;
+      case 'settings':          return <SettingsView />;
+      default:                  return <KidsDashboard />;
     }
   };
 
   if (authLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)' }}>
-        <div style={{ color: 'var(--primary)', fontSize: '1.2rem', fontWeight: 'bold' }}>로딩 중...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', gap: '16px' }}>
+        <div style={{ fontSize: '2rem' }}>✝</div>
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>예수클래스를 불러오는 중...</div>
       </div>
     );
   }
@@ -120,28 +94,24 @@ export default function App() {
   }
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab} 
-      onOpenChat={() => setChatOpen(true)}
-    >
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} onOpenChat={() => setChatOpen(true)}>
       {renderView()}
-
-      {/* 배너 광고 영역 (하단 고정) */}
       <div style={{ padding: '0 16px 16px', background: 'var(--bg-main)' }}>
         <BannerAd />
       </div>
-
-      {/* 전면 광고 영역 */}
       {showInterstitial && (
         <InterstitialAd onClose={() => setShowInterstitial(false)} />
       )}
-
-      {/* 1:1 소통 톡 모달 */}
-      <ChatModal 
-        isOpen={chatOpen} 
-        onClose={() => setChatOpen(false)} 
-      />
+      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </Layout>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
