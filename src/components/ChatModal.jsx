@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 import { Send, X, MessageSquare, Clock, Moon, Check, CheckCheck, ChevronLeft, Menu, Plus, Smile, Bell } from 'lucide-react';
+import { rtdb, isFirebaseConfigured } from '../firebase/config';
+import { ref, onValue, off, push } from 'firebase/database';
 
 export default function ChatModal({ isOpen, onClose }) {
   const { 
     currentUser, 
     students, 
-    messages, 
-    sendMessage, 
+    messages: storeMessages,
+    sendMessage,
     teacherSettings, 
     updateTeacherSettings,
     markMessagesAsRead 
   } = useStore();
+
+  // 실시간 메시지 상태 (Realtime DB 구독)
+  const [realtimeMessages, setRealtimeMessages] = useState([]);
+
+  // 현재 사용할 messages (Firebase 연결 여부에 따라)
+  const messages = isFirebaseConfigured ? realtimeMessages : storeMessages;
   
   const [inputText, setInputText] = useState('');
   const [activeChatStudentId, setActiveChatStudentId] = useState('');
@@ -75,6 +83,30 @@ export default function ChatModal({ isOpen, onClose }) {
       markMessagesAsRead(activeChatStudentId, currentUser.role);
     }
   }, [currentUser, students, activeChatStudentId, isOpen, markMessagesAsRead]);
+
+  // 🔥 Realtime DB 구독 — 대화방 변경 시 실시간 메시지 수신
+  useEffect(() => {
+    if (!isFirebaseConfigured || !rtdb || !activeChatStudentId) return;
+
+    const chatRef = ref(rtdb, `chats/${activeChatStudentId}`);
+    const unsubscribe = onValue(chatRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        setRealtimeMessages([]);
+        return;
+      }
+      // key를 id로 변환하여 배열로 정렬
+      const msgs = Object.entries(data).map(([key, val]) => ({
+        id: key,
+        ...val,
+        studentId: activeChatStudentId,
+      }));
+      msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      setRealtimeMessages(msgs);
+    });
+
+    return () => off(chatRef);
+  }, [activeChatStudentId, isOpen]);
 
   if (!isOpen) return null;
 
