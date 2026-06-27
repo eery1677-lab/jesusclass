@@ -627,5 +627,26 @@ export const useStore = create((set, get) => ({
         [`dailyMissions.${missionType}.teacherFeedback`]: feedback
       });
     } catch (e) { console.error(e); }
+  },
+
+  // 19. 학생 추가 및 삭제
+  addStudent: async (name, avatar = '👦') => {
+    try {
+      const studentId = `student_${Date.now()}`;
+      await setDoc(doc(db, "students", studentId), {
+        name,
+        avatar,
+        attendanceCount: 0,
+        dalantBalance: 0,
+        createdAt: new Date().toISOString(),
+        dailyMissions: {}
+      });
+    } catch (e) { console.error('학생 추가 실패:', e); }
+  },
+
+  deleteStudent: async (studentId) => {
+    try {
+      await deleteDoc(doc(db, "students", studentId));
+    } catch (e) { console.error('학생 삭제 실패:', e); }
   }
 }));

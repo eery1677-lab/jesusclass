@@ -3,11 +3,20 @@ import { useStore } from '../../store/useStore';
 import { CheckSquare, Calendar as CalendarIcon, User, CheckCircle, XCircle, Clock, ArrowLeft, X, MessageSquare, Save } from 'lucide-react';
 
 export default function TeacherAttendance({ setActiveTab }) {
-  const { students, updateStudentDalant } = useStore();
+  const { students, updateStudentDalant, addStudent, deleteStudent } = useStore();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // 가상의 출석 상태 관리를 위한 로컬 상태 (실제 앱에서는 useStore의 각 학생별 출결 배열에 저장해야 함)
+  // 가상의 출석 상태 관리를 위한 로컬 상태
   const [attendanceRecords, setAttendanceRecords] = useState({});
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentAvatar, setNewStudentAvatar] = useState('👦');
+
+  const handleDeleteStudent = (studentId, studentName) => {
+    if (window.confirm(`정말 ${studentName} 학생을 우리 반 목록에서 삭제하시겠습니까?\n삭제하면 이 학생의 기존 미션 및 달란트 정보가 모두 사라집니다.`)) {
+      deleteStudent(studentId);
+    }
+  };
 
   const handleAttendanceChange = (studentId, status) => {
     const key = `${selectedDate}_${studentId}`;
@@ -73,17 +82,26 @@ export default function TeacherAttendance({ setActiveTab }) {
       </section>
 
       <div style={styles.datePickerCard} className="card-solid hover-lift">
-        <label style={styles.dateLabel} htmlFor="date-select">
-          <CalendarIcon size={18} />
-          <span>날짜 선택</span>
-        </label>
-        <input 
-          id="date-select"
-          type="date" 
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          style={styles.dateInput}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={styles.dateLabel} htmlFor="date-select">
+            <CalendarIcon size={18} />
+            <span>날짜 선택</span>
+          </label>
+          <input 
+            id="date-select"
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={styles.dateInput}
+          />
+        </div>
+        <button 
+          className="btn"
+          style={{ background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '10px 16px', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+          onClick={() => setIsAddModalOpen(true)}
+        >
+          ➕ 학생 추가
+        </button>
       </div>
 
       <div style={styles.listContainer}>
@@ -100,7 +118,19 @@ export default function TeacherAttendance({ setActiveTab }) {
                   )}
                 </div>
                 <div>
-                  <div style={styles.studentName}>{student.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={styles.studentName}>{student.name}</div>
+                    <button 
+                      style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStudent(student.id, student.name);
+                      }}
+                      title="학생 삭제"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                   <div style={styles.studentMeta}>누적 출석: {student.attendanceCount}회</div>
                   {(student.absenceReason || student.simbangNote) && (
                     <div style={styles.noteIndicator}>
@@ -186,6 +216,81 @@ export default function TeacherAttendance({ setActiveTab }) {
               </button>
               <button className="btn" style={{background: '#8B5CF6', color: 'white', display: 'flex', alignItems: 'center', gap: '6px'}} onClick={saveNotes}>
                 <Save size={16} /> 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 학생 등록 모달 */}
+      {isAddModalOpen && (
+        <div style={styles.modalOverlay} onClick={() => setIsAddModalOpen(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.modalTitle}>✨ 새 학생 등록</h3>
+              <button style={styles.closeBtn} onClick={() => setIsAddModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={styles.modalBody}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 700, display: 'block', marginBottom: '8px' }}>학생 이름</label>
+                <input 
+                  type="text" 
+                  className="neon-input" 
+                  placeholder="학생 이름을 입력하세요 (예: 홍길동)" 
+                  value={newStudentName}
+                  onChange={e => setNewStudentName(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 700, display: 'block', marginBottom: '8px' }}>대표 캐릭터 (아바타)</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {['👦', '👧', '👶', '🦁', '🐰', '🐻', '🐼', '🐱', '🐶'].map(emoji => (
+                    <button
+                      key={emoji}
+                      style={{
+                        fontSize: '1.8rem',
+                        padding: '8px',
+                        background: newStudentAvatar === emoji ? '#ECFDF5' : 'transparent',
+                        border: newStudentAvatar === emoji ? '2px solid var(--primary)' : '2px solid #E5E7EB',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onClick={() => setNewStudentAvatar(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button className="btn" style={{background: '#E5E7EB', color: '#374151', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}} onClick={() => setIsAddModalOpen(false)}>
+                취소
+              </button>
+              <button 
+                className="btn" 
+                style={{background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}
+                onClick={() => {
+                  if (!newStudentName.trim()) {
+                    alert('이름을 입력해주세요!');
+                    return;
+                  }
+                  addStudent(newStudentName.trim(), newStudentAvatar);
+                  setNewStudentName('');
+                  setIsAddModalOpen(false);
+                }}
+              >
+                등록하기
               </button>
             </div>
           </div>
