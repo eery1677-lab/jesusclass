@@ -329,13 +329,10 @@ export default function TeacherSchedule({ setActiveTab }) {
 
 const styles = {
   container: {
-    padding: '20px',
-    paddingBottom: '100px',
-    maxWidth: '1200px',
-    margin: '0 auto',
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '16px',
+    paddingBottom: '80px',
   },
   headerPanel: {
     display: 'flex',

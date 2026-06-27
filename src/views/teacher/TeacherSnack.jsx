@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { ArrowLeft, Coffee, Search, Check, Edit2, Gift, Save } from 'lucide-react';
+import { ArrowLeft, Coffee, Search, Check, Edit2, Gift, Save, Plus } from 'lucide-react';
 
 export default function TeacherSnack({ setActiveTab }) {
   const { snacks, snackRequests, updateSnackMenu, addSnack, setChatOpen, setActiveChatStudentId } = useStore();
