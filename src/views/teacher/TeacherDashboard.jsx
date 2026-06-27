@@ -177,7 +177,13 @@ export default function TeacherDashboard({ setActiveTab }) {
                       return (
                         <div key={idx} style={styles.todoItem}>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                             <div style={styles.studentAvatarMini}>{pm.student.avatar || '👦'}</div>
+                             <div style={{...styles.studentAvatarMini, overflow: 'hidden'}}>
+                               {pm.student.imageUrl ? (
+                                 <img src={pm.student.imageUrl} alt="student" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                               ) : (
+                                 pm.student.avatar || '👦'
+                               )}
+                             </div>
                              <div>
                                 <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{pm.student.name}</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{missionNames[pm.type] || '기타 미션'} 제출</div>
@@ -470,6 +476,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '1.2rem',
+    overflow: 'hidden',
   },
   modalBackdrop: {
     position: 'fixed',

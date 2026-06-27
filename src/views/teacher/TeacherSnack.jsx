@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { ArrowLeft, Coffee, Search, Check, Edit2, Gift, Save } from 'lucide-react';
 
 export default function TeacherSnack({ setActiveTab }) {
-  const { snacks, snackRequests, updateSnackMenu } = useStore();
+  const { snacks, snackRequests, updateSnackMenu, setChatOpen, setActiveChatStudentId } = useStore();
   
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ menu: '', sponsor: '', emoji: '' });
@@ -202,7 +202,13 @@ export default function TeacherSnack({ setActiveTab }) {
                     "{req.message}"
                   </div>
                   <div style={styles.requestActions}>
-                    <button style={styles.replyBtn}>
+                    <button 
+                      style={styles.replyBtn}
+                      onClick={() => {
+                        setActiveChatStudentId(req.studentId);
+                        setChatOpen(true);
+                      }}
+                    >
                       답장하기
                     </button>
                   </div>

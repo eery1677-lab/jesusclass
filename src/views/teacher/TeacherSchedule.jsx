@@ -102,7 +102,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                     <label style={styles.label}>시간 (HH:MM)</label>
                     <input 
                       type="time" 
-                      style={styles.input} 
+                      className="schedule-input" 
                       value={editForm.time}
                       onChange={e => setEditForm({...editForm, time: e.target.value})}
                     />
@@ -111,7 +111,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                     <label style={styles.label}>일정 제목</label>
                     <input 
                       type="text" 
-                      style={styles.input} 
+                      className="schedule-input" 
                       placeholder="예: 주일학교 예배"
                       value={editForm.title}
                       onChange={e => setEditForm({...editForm, title: e.target.value})}
@@ -121,7 +121,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                     <label style={styles.label}>장소</label>
                     <input 
                       type="text" 
-                      style={styles.input} 
+                      className="schedule-input" 
                       placeholder="예: 소예배실"
                       value={editForm.location}
                       onChange={e => setEditForm({...editForm, location: e.target.value})}
@@ -131,7 +131,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                     <div style={styles.inputGroup}>
                       <label style={styles.label}>아이콘</label>
                       <select 
-                        style={styles.input}
+                        className="schedule-input"
                         value={editForm.iconType}
                         onChange={e => setEditForm({...editForm, iconType: e.target.value})}
                       >
@@ -183,7 +183,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                       <label style={styles.label}>시간 (HH:MM)</label>
                       <input 
                         type="time" 
-                        style={styles.input} 
+                        className="schedule-input" 
                         value={editForm.time}
                         onChange={e => setEditForm({...editForm, time: e.target.value})}
                       />
@@ -192,7 +192,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                       <label style={styles.label}>일정 제목</label>
                       <input 
                         type="text" 
-                        style={styles.input} 
+                        className="schedule-input" 
                         value={editForm.title}
                         onChange={e => setEditForm({...editForm, title: e.target.value})}
                       />
@@ -201,7 +201,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                       <label style={styles.label}>장소</label>
                       <input 
                         type="text" 
-                        style={styles.input} 
+                        className="schedule-input" 
                         value={editForm.location}
                         onChange={e => setEditForm({...editForm, location: e.target.value})}
                       />
@@ -210,7 +210,7 @@ export default function TeacherSchedule({ setActiveTab }) {
                       <div style={styles.inputGroup}>
                         <label style={styles.label}>아이콘</label>
                         <select 
-                          style={styles.input}
+                          className="schedule-input"
                           value={editForm.iconType}
                           onChange={e => setEditForm({...editForm, iconType: e.target.value})}
                         >

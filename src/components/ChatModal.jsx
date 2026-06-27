@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
-import { Send, X, MessageSquare, Clock, Moon, Check, CheckCheck, ChevronLeft, Menu, Plus, Smile, Bell } from 'lucide-react';
+import { Send, X, MessageSquare, Clock, Moon, Check, CheckCheck, ChevronLeft, Menu, Plus, Smile, Bell, Loader } from 'lucide-react';
 import { rtdb, isFirebaseConfigured } from '../firebase/config';
 import { ref, onValue, off, push } from 'firebase/database';
+import { uploadImage } from '../utils/uploadImage';
 
 export default function ChatModal({ isOpen, onClose }) {
   const { 
@@ -12,7 +13,9 @@ export default function ChatModal({ isOpen, onClose }) {
     sendMessage,
     teacherSettings, 
     updateTeacherSettings,
-    markMessagesAsRead 
+    markMessagesAsRead,
+    activeChatStudentId,
+    setActiveChatStudentId
   } = useStore();
 
   // 실시간 메시지 상태 (Realtime DB 구독)
@@ -22,13 +25,20 @@ export default function ChatModal({ isOpen, onClose }) {
   const messages = isFirebaseConfigured ? realtimeMessages : storeMessages;
   
   const [inputText, setInputText] = useState('');
-  const [activeChatStudentId, setActiveChatStudentId] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showNoticeSender, setShowNoticeSender] = useState(false);
+  const [noticeText, setNoticeText] = useState('');
+  const [noticeImage, setNoticeImage] = useState('');
+  const [isSendingNotice, setIsSendingNotice] = useState(false);
+  const [isChatImageUploading, setIsChatImageUploading] = useState(false);
+  const [isNoticeImageUploading, setIsNoticeImageUploading] = useState(false);
+  const [noticeImageError, setNoticeImageError] = useState('');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const noticeFileInputRef = useRef(null);
 
   const emojis = [
     '😀', '😂', '😍', '🥰', '😎', '😇', '🤔', '😊', '😉', '🤣',
@@ -159,25 +169,82 @@ export default function ChatModal({ isOpen, onClose }) {
     setScheduledTime('');
   };
 
-  const handleFileUpload = (e) => {
+  // 지저스톡 채팅창 사진 업로드 (Firebase Storage)
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const senderId = currentUser.role === 'teacher' ? 'teacher1' : currentUser.id;
-      const senderName = currentUser.name;
-      
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageUrl = event.target.result;
-          sendMessage(activeChatStudentId, senderId, senderName, `[사진 첨부됨: ${file.name}]`, null, imageUrl);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        sendMessage(activeChatStudentId, senderId, senderName, `[파일 첨부됨: ${file.name}]`, null);
+    if (!file) return;
+    e.target.value = null;
+
+    // 대표님 요청: 사진을 올리는 순간 미리 주의/권장 팝업창을 띄워 사용자에게 가이드를 제시합니다.
+    alert(
+      '📱 사진 전송 안내 📱\n\n' +
+      '갤럭시 울트라 등 고해상도 카메라 원본 사진은 스마트폰 성능 및 용량 한계로 전송이 실패하거나 느려질 수 있습니다.\n\n' +
+      '👉 전송이 안 되시는 경우:\n' +
+      '1. 화면을 캡처(스크린샷)한 캡처 사진을 올려보세요.\n' +
+      '2. 카카오톡 채팅방에 보낸 후 다운로드한 사진을 올려보세요.'
+    );
+
+    const senderId = currentUser.role === 'teacher' ? 'teacher1' : currentUser.id;
+    const senderName = currentUser.name;
+
+    setIsChatImageUploading(true);
+    try {
+      const url = await uploadImage(file, 'chat_images', { maxSize: 1200, quality: 0.82 });
+      await sendMessage(activeChatStudentId, senderId, senderName, `[사진 첨부됨: ${file.name}]`, null, url);
+    } catch (err) {
+      console.error('채팅 이미지 업로드 실패:', err);
+      alert(
+        '⚠️ 사진 전송에 실패했습니다.\n\n' +
+        '갤럭시 울트라 등 고해상도 카메라 원본 사진은 용량이 너무 커 전송이 제한될 수 있습니다.\n\n' +
+        '👉 해결 방법:\n' +
+        '1. 화면을 캡처(스크린샷)한 캡처 사진을 전송해 보세요.\n' +
+        '2. 카카오톡으로 전송한 후 다운로드받은 사진을 전송해 보세요.'
+      );
+    } finally {
+      setIsChatImageUploading(false);
+    }
+  };
+
+  // 전체 공지 이미지 업로드 (Firebase Storage)
+  const handleNoticeImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (noticeFileInputRef.current) noticeFileInputRef.current.value = '';
+
+    setIsNoticeImageUploading(true);
+    setNoticeImageError('');
+    try {
+      const url = await uploadImage(file, 'notice_images', { maxSize: 1400, quality: 0.85 });
+      setNoticeImage(url);
+    } catch (err) {
+      console.error('공지 이미지 업로드 실패:', err);
+      setNoticeImageError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsNoticeImageUploading(false);
+    }
+  };
+
+  const handleSendNotice = async (e) => {
+    e.preventDefault();
+    if (!noticeText.trim()) return;
+    setIsSendingNotice(true);
+
+    const senderId = 'teacher1';
+    const senderName = currentUser.name;
+
+    try {
+      for (const student of students) {
+        await sendMessage(student.id, senderId, senderName, `[전체공지] ${noticeText}`, null, noticeImage || null);
       }
-      
-      // reset file input
-      e.target.value = null;
+      alert('모든 학부모/학생 대화방으로 전체 공지사항이 전송되었습니다! 📢');
+      setNoticeText('');
+      setNoticeImage('');
+      setShowNoticeSender(false);
+    } catch (err) {
+      console.error(err);
+      alert('공지사항 발송 중 오류가 발생했습니다.');
+    } finally {
+      setIsSendingNotice(false);
     }
   };
 
@@ -255,7 +322,13 @@ export default function ChatModal({ isOpen, onClose }) {
                     onClick={() => setActiveChatStudentId(s.id)}
                     style={styles.studentItem(activeChatStudentId === s.id)}
                   >
-                    <span style={{ fontSize: '1.2rem' }}>{s.avatar}</span>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                      {s.imageUrl ? (
+                        <img src={s.imageUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '1.2rem' }}>{s.avatar || '👦'}</span>
+                      )}
+                    </div>
                     <div style={styles.studentItemText}>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
                         {s.name}
@@ -286,7 +359,7 @@ export default function ChatModal({ isOpen, onClose }) {
                   <span style={styles.statusText}>● 지저스톡 불가시간 ▾</span>
                 </div>
                 <div style={{display: 'flex', gap: '8px'}}>
-                  <button style={styles.headerIconBtn} onClick={() => alert('전체 공지사항 발송 기능은 준비중입니다.')} title="전체 공지 보내기">
+                  <button style={styles.headerIconBtn} onClick={() => setShowNoticeSender(true)} title="전체 공지 보내기">
                     <Bell size={24} />
                   </button>
                   <button style={styles.headerIconBtn} onClick={() => setIsScheduling(!isScheduling)} title="예약 전송 설정">
@@ -375,7 +448,13 @@ export default function ChatModal({ isOpen, onClose }) {
                         <div style={styles.messageBubbleWrapper(isMe)}>
                           {!isMe && (
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <div style={styles.chatAvatar}>{selectedStudent?.avatar || '👦'}</div>
+                              <div style={{...styles.chatAvatar, overflow: 'hidden'}}>
+                                {selectedStudent?.imageUrl ? (
+                                  <img src={selectedStudent.imageUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  selectedStudent?.avatar || '👦'
+                                )}
+                              </div>
                               <div style={styles.senderName}>{msg.senderName}</div>
                             </div>
                           )}
@@ -388,16 +467,17 @@ export default function ChatModal({ isOpen, onClose }) {
                               </div>
                             )}
                             
-                            <div style={styles.messageBubble(isMe, isScheduled)}>
+                            <div style={styles.messageBubble(isMe, isScheduled, !!msg.imageUrl)}>
                               {isScheduled && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', marginBottom: '4px', color: '#ffeb3b' }}>
                                   <Clock size={12} /> 예약 전송 대기 중 ({new Date(msg.scheduledFor).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
                                 </div>
                               )}
-                              {msg.imageUrl && (
-                                <img src={msg.imageUrl} alt="첨부 이미지" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', display: 'block' }} />
+                              {msg.imageUrl ? (
+                                <img src={msg.imageUrl} alt="첨부 이미지" style={{ maxWidth: '100%', borderRadius: '12px', display: 'block' }} />
+                              ) : (
+                                msg.content
                               )}
-                              {msg.content}
                             </div>
 
                             {/* 시간 (상대방 메시지일 때 우측) */}
@@ -444,15 +524,22 @@ export default function ChatModal({ isOpen, onClose }) {
                   type="file" 
                   ref={fileInputRef} 
                   style={{display: 'none'}} 
-                  onChange={handleFileUpload} 
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  disabled={isChatImageUploading}
                 />
                 <button 
                   type="button" 
                   style={styles.iconBtn}
-                  title="파일 첨부"
-                  onClick={() => fileInputRef.current?.click()}
+                  title={isChatImageUploading ? "업로드 중..." : "사진 첨부"}
+                  onClick={() => !isChatImageUploading && fileInputRef.current?.click()}
+                  disabled={isChatImageUploading}
                 >
-                  <Plus size={22} />
+                  {isChatImageUploading ? (
+                    <Loader size={22} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <Plus size={22} />
+                  )}
                 </button>
                 
                 <div style={styles.inputContainer}>
@@ -503,6 +590,170 @@ export default function ChatModal({ isOpen, onClose }) {
           )}
         </div>
       </div>
+
+      {/* 전체 공지사항 발송 모달 */}
+      {showNoticeSender && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div className="card-solid animate-fade-up" style={{
+            width: '100%',
+            maxWidth: '450px',
+            background: 'var(--bg-card)',
+            borderRadius: '24px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Bell size={20} />
+                <span>📢 지저스톡 전체 공지 발송</span>
+              </h3>
+              <button 
+                onClick={() => { setShowNoticeSender(false); setNoticeText(''); setNoticeImage(''); }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+              작성하신 공지사항과 첨부한 사진은 현재 등록된 **모든 학생/학부모님의 1:1 대화방**으로 즉시 각각 발송됩니다.
+            </p>
+
+            <form onSubmit={handleSendNotice} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>공지 내용</label>
+                <textarea
+                  value={noticeText}
+                  onChange={e => setNoticeText(e.target.value)}
+                  placeholder="모든 학부모님께 전달할 공지사항을 입력해주세요..."
+                  rows={4}
+                  required
+                  className="schedule-input"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    fontSize: '0.9rem',
+                    resize: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>사진 첨부 (선택)</label>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', margin: '2px 0 6px 0', lineHeight: 1.4 }}>
+                  ⚠️ 갤럭시 울트라 등 <b>고해상도 모바일 원본 사진</b>은 용량이 커 업로드가 실패할 수 있습니다. 실패 시 <b>화면을 캡처(스크린샷)한 사진</b>이나 <b>카카오톡 다운로드 사진</b>을 이용하시면 즉시 업로드됩니다.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => !isNoticeImageUploading && noticeFileInputRef.current?.click()}
+                    disabled={isNoticeImageUploading}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-app)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: isNoticeImageUploading ? 'not-allowed' : 'pointer',
+                      opacity: isNoticeImageUploading ? 0.6 : 1,
+                      display: 'flex', alignItems: 'center', gap: '6px'
+                    }}
+                  >
+                    {isNoticeImageUploading ? (
+                      <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> 업로드 중...</>
+                    ) : '📱 사진 선택하기 (갤럭시/아이폰 OK)'}
+                  </button>
+                  <input
+                    type="file"
+                    ref={noticeFileInputRef}
+                    onChange={handleNoticeImageUpload}
+                    accept="image/*"
+                    disabled={isNoticeImageUploading}
+                    style={{ display: 'none' }}
+                  />
+                  {noticeImage && !isNoticeImageUploading && (
+                    <span style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 600 }}>
+                      ✅ 사진 첨부됨
+                    </span>
+                  )}
+                </div>
+                {noticeImageError && (
+                  <div style={{ marginTop: '4px', color: '#EF4444', fontSize: '0.8rem', fontWeight: 600 }}>
+                    ⚠️ {noticeImageError}
+                  </div>
+                )}
+                {noticeImage && !isNoticeImageUploading && (
+                  <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', border: '2px solid #10B981', marginTop: '8px' }}>
+                    <img src={noticeImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button
+                      type="button"
+                      onClick={() => setNoticeImage('')}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSendingNotice || !noticeText.trim()}
+                style={{
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: 'var(--primary)',
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  cursor: (isSendingNotice || !noticeText.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (isSendingNotice || !noticeText.trim()) ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isSendingNotice ? '발송 중...' : '공지사항 전체 발송'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -707,17 +958,18 @@ const styles = {
   readStatus: {
     paddingBottom: '4px',
   },
-  messageBubble: (isMe, isScheduled) => ({
-    background: isMe ? 'var(--primary)' : 'var(--bg-main)',
+  messageBubble: (isMe, isScheduled, hasImage) => ({
+    background: hasImage ? 'transparent' : (isMe ? 'var(--primary)' : 'var(--bg-main)'),
     color: isMe ? 'var(--text-white)' : 'var(--text-main)',
-    padding: '10px 16px',
+    padding: hasImage ? '0px' : '10px 16px',
     borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
     fontSize: '0.9rem',
     lineHeight: 1.4,
-    boxShadow: 'var(--shadow-sm)',
-    border: '1px solid ' + (isMe ? 'transparent' : 'var(--border-color)'),
+    boxShadow: hasImage ? 'none' : 'var(--shadow-sm)',
+    border: hasImage ? '1px solid var(--border-color)' : ('1px solid ' + (isMe ? 'transparent' : 'var(--border-color)')),
     opacity: isScheduled ? 0.7 : 1,
     borderStyle: isScheduled ? 'dashed' : 'solid',
+    overflow: 'hidden',
   }),
   timestamp: {
     fontSize: '0.65rem',

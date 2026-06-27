@@ -417,3 +417,21 @@ input, textarea { min-width: 0; max-width: 100%; }
   animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* 일정 시간표 입력란 회색 포커스 효과 */
+.schedule-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.95rem;
+  outline: none;
+  background: var(--bg-card);
+  color: var(--text-main);
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+.schedule-input:focus {
+  outline: none;
+  border: 2px solid #10B981 !important;
+  box-shadow: none !important;
+}
+

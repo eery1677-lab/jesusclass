@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Camera, Calendar, Plus, Send, Heart, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Camera, Calendar, Plus, Send, Heart, MessageSquare, ArrowLeft, Loader } from 'lucide-react';
+import { uploadImage } from '../../utils/uploadImage';
 
 const PRESET_IMAGES = [
   {
@@ -28,6 +29,8 @@ export default function TeacherAlbum({ setActiveTab }) {
   const [customImage, setCustomImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const handleCommentChange = (albumId, value) => {
     setCommentInputs(prev => ({...prev, [albumId]: value}));
@@ -42,55 +45,34 @@ export default function TeacherAlbum({ setActiveTab }) {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          const MAX_SIZE = 800; // 사진첩용이므로 프로필보다 좀 더 크게
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setUploadedImage(compressedDataUrl);
-          setCustomImage('');
-          setSelectedImage('');
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError('');
+
+    try {
+      const url = await uploadImage(file, 'albums', { maxSize: 1200, quality: 0.82 });
+      setUploadedImage(url);
+      setCustomImage('');
+      setSelectedImage('');
+    } catch (err) {
+      console.error('앨범 이미지 업로드 실패:', err);
+      setUploadError('사진 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUploading(false);
+      // 같은 파일 재선택을 위해 input 초기화
+      e.target.value = '';
     }
   };
 
-  const handleCreateAlbum = (e) => {
+  const handleCreateAlbum = async (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
     const finalImage = uploadedImage || customImage.trim() || selectedImage;
-    addAlbum(newTitle, finalImage);
+    await addAlbum(newTitle, finalImage);
     
     setNewTitle('');
     setCustomImage('');
@@ -158,25 +140,46 @@ export default function TeacherAlbum({ setActiveTab }) {
 
           <div className="form-group">
             <label className="form-label" htmlFor="custom-image-url">또는 직접 사진 업로드 (추천)</label>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', margin: '4px 0 8px 0', lineHeight: 1.4 }}>
+              ⚠️ 갤럭시 울트라 등 <b>고해상도 모바일 원본 사진</b>은 용량이 커 업로드가 실패할 수 있습니다. 실패 시 <b>화면을 캡처(스크린샷)한 사진</b>이나 <b>카카오톡 다운로드 사진</b>을 이용하시면 즉시 업로드됩니다.
+            </p>
             <input
               id="file-upload"
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
+              disabled={isUploading}
               style={{ display: 'none' }}
             />
-            <label htmlFor="file-upload" style={styles.uploadBtn}>
-              <Camera size={18} />
-              {uploadedImage ? '사진 변경하기' : '기기에서 사진 선택'}
+            <label htmlFor="file-upload" style={{...styles.uploadBtn, opacity: isUploading ? 0.7 : 1, cursor: isUploading ? 'not-allowed' : 'pointer'}}>
+              {isUploading ? (
+                <>
+                  <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  업로드 중...
+                </>
+              ) : (
+                <>
+                  <Camera size={18} />
+                  {uploadedImage ? '사진 변경하기' : '📱 기기에서 사진 선택 (갤럭시/아이폰 OK)'}
+                </>
+              )}
             </label>
-            {uploadedImage && (
-              <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
-                <img src={uploadedImage} alt="preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }} />
+            {uploadError && (
+              <div style={{ marginTop: '8px', color: '#EF4444', fontSize: '0.85rem', fontWeight: 600 }}>
+                ⚠️ {uploadError}
+              </div>
+            )}
+            {uploadedImage && !isUploading && (
+              <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden', border: '2px solid #10B981' }}>
+                <img src={uploadedImage} alt="preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', display: 'block' }} />
+                <div style={{ padding: '6px 12px', background: '#10B981', color: 'white', fontSize: '0.8rem', fontWeight: 700, textAlign: 'center' }}>
+                  ✅ 업로드 완료! 사진이 준비되었습니다.
+                </div>
               </div>
             )}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end' }}>
+          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end' }} disabled={isUploading}>
             <Send size={16} />
             <span>사진첩 발행하기</span>
           </button>
@@ -319,7 +322,9 @@ const styles = {
   imageWrapper: {
     width: '100%',
     height: '180px',
-    background: '#000',
+    borderTopLeftRadius: 'calc(var(--radius-md) - 1px)',
+    borderTopRightRadius: 'calc(var(--radius-md) - 1px)',
+    overflow: 'hidden',
   },
   image: {
     width: '100%',

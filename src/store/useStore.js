@@ -1,7 +1,9 @@
 import { create } from 'zustand';
-import { collection, doc, onSnapshot, updateDoc, setDoc, deleteDoc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, setDoc, deleteDoc, addDoc, getDoc, getDocs } from 'firebase/firestore';
+import { ref, remove } from 'firebase/database';
 import { signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { db, auth, googleProvider } from '../firebase';
+import { rtdb, isFirebaseConfigured } from '../firebase/config';
 
 // 로컬스토리지 헬퍼 (로그인 상태, 설정 등)
 const getLocalStorage = (key, initial) => {
@@ -29,12 +31,15 @@ export const useStore = create((set, get) => ({
     dndStart: '22:00',
     dndEnd: '08:00'
   }),
-  churchName: getLocalStorage('jc_church_name', '양정교회'),
+  churchName: getLocalStorage('jc_church_name', ''),
   churchContact: getLocalStorage('jc_church_contact', {
-    phone: '02-123-4567',
-    address: '서울특별시 은혜구 축복로 100\n지저스빌딩 3층',
-    email: 'jesusclass@church.com'
+    phone: '',
+    address: '',
+    email: ''
   }),
+  isMoreMenuOpen: false,
+  chatOpen: false,
+  activeChatStudentId: '',
 
   // 2. Firebase 상태 저장소
   students: [],
@@ -112,11 +117,21 @@ export const useStore = create((set, get) => ({
     set({ churchContact: contact });
     setLocalStorage('jc_church_contact', contact);
   },
-  updateTeacherSettings: (settings) => {
+  updateTeacherSettings: async (settings) => {
     const newSettings = { ...get().teacherSettings, ...settings };
     set({ teacherSettings: newSettings });
     setLocalStorage('jc_teacher_settings', newSettings);
+    
+    // Firestore settings/teacher 문서에 실시간 동기화 저장
+    try {
+      await setDoc(doc(db, 'settings', 'teacher'), newSettings, { merge: true });
+    } catch (e) {
+      console.error('교사 설정 Firestore 저장 에러:', e);
+    }
   },
+  setMoreMenuOpen: (isOpen) => set({ isMoreMenuOpen: isOpen }),
+  setChatOpen: (isOpen) => set({ chatOpen: isOpen }),
+  setActiveChatStudentId: (id) => set({ activeChatStudentId: id }),
   // Firebase 로그인 연동 (Google)
   loginWithGoogle: async () => {
     try {
@@ -165,21 +180,21 @@ export const useStore = create((set, get) => ({
               email: user.email,
               name: userData.name || user.displayName || '이름 없음',
               role: userData.role, 
-              id: userData.studentId || user.uid, // 매칭된 학생 ID
+              id: userData.studentId || null, // 매칭된 학생 ID (없으면 null)
               mode: userData.role === 'teacher' ? 'teacher' : 'parent',
               isChildDirectLogin: false
             },
             authLoading: false
           });
         } else {
-          // 권한 정보가 없으면 임시로 학부모(parent)로 간주
+          // 권한 정보가 없으면 신규 가입자이므로 진짜 빈 학부모(parent) 계정 생성
           set({ 
             currentUser: { 
               uid: user.uid, 
               email: user.email,
               name: user.displayName || '학부모님',
               role: 'parent', 
-              id: 'student1', // 임시 매핑
+              id: null, // 임시 더미 매핑 완전 차단
               mode: 'parent',
               isChildDirectLogin: false
             },
@@ -188,6 +203,15 @@ export const useStore = create((set, get) => ({
         }
       } else {
         set({ currentUser: null, authLoading: false });
+      }
+    });
+
+    // 교사 설정 실시간 리스너 추가
+    onSnapshot(doc(db, 'settings', 'teacher'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        set({ teacherSettings: data });
+        setLocalStorage('jc_teacher_settings', data);
       }
     });
 
@@ -409,20 +433,32 @@ export const useStore = create((set, get) => ({
     } catch (e) { console.error(e); }
   },
   
-  // 10. 1:1 톡 메시지 발송
   sendMessage: async (studentId, senderId, senderName, content, scheduledFor = null, imageUrl = null) => {
+    const msgData = {
+      studentId,
+      senderId,
+      senderName,
+      content,
+      isRead: false,
+      scheduledFor,
+      imageUrl,
+      timestamp: new Date().toISOString()
+    };
+
     try {
-      await setDoc(doc(db, "messages", `msg_${Date.now()}`), {
-        studentId,
-        senderId,
-        senderName,
-        content,
-        isRead: false,
-        scheduledFor,
-        imageUrl,
-        timestamp: new Date().toISOString()
-      });
-    } catch (e) { console.error(e); }
+      // 1. Firestore 저장
+      await setDoc(doc(db, "messages", `msg_${Date.now()}`), msgData);
+      
+      // 2. Realtime Database 동기화 (활성화 시)
+      if (isFirebaseConfigured && rtdb) {
+        const { ref, push, set } = await import('firebase/database');
+        const chatRef = ref(rtdb, `chats/${studentId}`);
+        const newMsgRef = push(chatRef);
+        await set(newMsgRef, msgData);
+      }
+    } catch (e) {
+      console.error('메시지 전송 실패:', e);
+    }
   },
 
   // 11. 메시지 읽음 처리

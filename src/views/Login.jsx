@@ -91,7 +91,9 @@ export default function Login() {
       <div style={styles.card}>
         {/* 로고 */}
         <div style={styles.logoWrap}>
-          <div style={styles.crossIcon}>✝</div>
+          <div style={styles.crossIcon}>
+            <span style={{ display: 'inline-block', transform: 'translateY(-2px)' }}>✝</span>
+          </div>
         </div>
 
         <h1 style={styles.appTitle}>예수클래스</h1>
@@ -205,16 +207,20 @@ const styles = {
     marginBottom: '20px',
   },
   crossIcon: {
-    width: '72px',
-    height: '72px',
+    width: '74px',
+    height: '74px',
     borderRadius: '20px',
-    background: 'linear-gradient(135deg, var(--primary), #a78bfa)',
+    border: '2px solid rgba(16, 185, 129, 0.8)',
+    background: 'var(--bg-card)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '2.2rem',
-    color: 'white',
-    boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+    fontSize: '2.5rem',
+    color: '#8d6e63',
+    fontFamily: 'serif',
+    fontWeight: 'bold',
+    boxShadow: '0 0 15px rgba(16, 185, 129, 0.25), inset 0 0 10px rgba(16, 185, 129, 0.1)',
+    animation: 'neon-breathe 2s ease-in-out infinite',
   },
   appTitle: {
     fontSize: '2rem',

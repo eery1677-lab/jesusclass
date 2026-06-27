@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export default function InterstitialAd({ onClose }) {
-  const [timeLeft, setTimeLeft] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(2); // 2초 후 닫기 활성화
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -11,26 +11,40 @@ export default function InterstitialAd({ onClose }) {
     }
   }, [timeLeft]);
 
+  useEffect(() => {
+    // 구글 애드센스 광고 로드
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+      console.error('AdSense load error:', e);
+    }
+  }, []);
+
   return (
     <div style={styles.overlay}>
       <div style={styles.container} className="animate-fade-in">
         <div style={styles.header}>
-          <span style={styles.adLabel}>Sponsored</span>
+          <span style={styles.adLabel}>Sponsored Ad</span>
           {timeLeft > 0 ? (
-            <span style={styles.timer}>{timeLeft}초 후 닫기 가능</span>
+            <span style={styles.timer}>{timeLeft}초 후 닫기</span>
           ) : (
             <button style={styles.closeBtn} onClick={onClose}>
-              <X size={24} />
+              <X size={22} style={{ color: 'var(--text-main)' }} />
             </button>
           )}
         </div>
+        
         <div style={styles.body}>
-          <h2 style={{margin: 0, color: 'var(--text-main)'}}>여름 성경 학교 캠프 사전 접수</h2>
-          <p style={{margin: 0, color: 'var(--text-muted)'}}>특별한 경험을 선물하세요!</p>
-          <div style={styles.dummyImage}>
-            <span>Ad Image Area</span>
+          {/* 구글 애드센스 반응형 광고 단위 박스 */}
+          <div style={{ minWidth: '250px', minHeight: '250px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.02)' }}>
+            <ins className="adsbygoogle"
+                 style={{ display: 'block', width: '300px', height: '250px' }}
+                 data-ad-client="ca-pub-7007910390274539" // 대표님 애드몹 ca-pub 번호
+                 data-ad-slot="1117403443" // 발급받으신 전면 광고 slot 번호
+                 data-ad-format="rectangle"></ins>
           </div>
-          <button style={styles.actionBtn}>자세히 보기</button>
+          
+          <button style={styles.actionBtn} onClick={onClose}>닫기</button>
         </div>
       </div>
     </div>

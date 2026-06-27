@@ -42,7 +42,39 @@ export default function KidsDashboard({ setActiveTab }) {
     }
   }, [student?.dalant]);
 
-  if (!student) return null;
+  if (!student) {
+    return (
+      <div style={{ ...styles.container, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px', textAlign: 'center' }}>
+        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContext: 'center', marginBottom: '20px', justifyContent: 'center' }}>
+          <Lock size={40} color="#3B82F6" />
+        </div>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px' }}>⛪ 예수클래스에 오신 것을 환영합니다!</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto 25px auto' }}>
+          학부모(또는 학생) 계정 가입이 안전하게 완료되었습니다!<br />
+          아직 매핑된 자녀 학생 정보가 존재하지 않습니다.
+        </p>
+        
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', marginBottom: '30px', textAlign: 'left' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>💡 다음 단계 안내</h4>
+          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.8' }}>
+            <li>담당 주일학교 반 선생님께 연락하여 신규 가입하신 이메일(<strong style={{ color: 'var(--accent-color)' }}>{currentUser?.email}</strong>)을 말씀해 주세요.</li>
+            <li>선생님이 교사용 대시보드에서 자녀 정보 매핑을 승인하시는 즉시 대시보드가 정상 활성화됩니다.</li>
+          </ol>
+        </div>
+
+        <button 
+          onClick={async () => {
+            const { signOut } = await import('firebase/auth');
+            const { auth } = await import('../../firebase');
+            await signOut(auth);
+          }}
+          style={{ padding: '12px 24px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+        >
+          로그아웃
+        </button>
+      </div>
+    );
+  }
 
   // 일일 미션 정보 계산
   const missions = [

@@ -21,19 +21,28 @@ import {
   Lock
 } from 'lucide-react';
 import ProfileEditModal from './ProfileEditModal';
+import TeacherProfileEditModal from './TeacherProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, switchUser, churchName, churchContact, students } = useStore();
+  const { currentUser, switchUser, churchName, churchContact, students, teacherSettings, isMoreMenuOpen, setMoreMenuOpen } = useStore();
   const { signOut } = useAuth();
   const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [generatedCode, setGeneratedCode] = useState(null);
+
+  // 교사와 학생 각각의 프로필 정보 정의
+  const profileImageUrl = currentUser.role === 'teacher' 
+    ? (teacherSettings?.imageUrl || currentUser.imageUrl || '')
+    : (currentStudent?.imageUrl || '');
+    
+  const profileAvatar = currentUser.role === 'teacher'
+    ? (teacherSettings?.avatar || currentUser.avatar || '👩‍🏫')
+    : (currentStudent?.avatar || '👦');
 
   // 메뉴 리스트
   const tabs = currentUser.role === 'teacher' 
@@ -65,7 +74,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               if (tab.isAction) {
                 onOpenChat();
               } else if (tab.id === 'more') {
-                setIsMoreMenuOpen(true);
+                setMoreMenuOpen(true);
               } else {
                 setActiveTab(tab.id);
               }
@@ -83,6 +92,10 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
   );
 
   // [Desktop] 좌측 사이드바 제거됨 (Mobile First)
+
+  // [중요] 실 배포(Production)를 진행할 때는 이 값을 true로 설정합니다.
+  // true로 설정하면 계정 전환(데모) 드롭다운 메뉴가 보이지 않고 온전한 정식 서비스로 실행됩니다.
+  const IS_PRODUCTION = true;
 
   return (
     <div style={styles.appContainer}>
@@ -109,20 +122,21 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
             <div style={{ position: 'relative' }}>
               <button 
                 style={styles.roleBtn} 
-                onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
+                onClick={() => !IS_PRODUCTION && setIsRoleMenuOpen(!isRoleMenuOpen)}
                 className="neon-logo-box hover-lift-no-border"
+                disabled={IS_PRODUCTION}
               >
                 <div style={{...styles.avatarMini, overflow: 'hidden'}}>
-                  {currentStudent?.imageUrl ? (
-                    <img src={currentStudent.imageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                   ) : (
-                    currentStudent?.avatar || (currentUser.role === 'teacher' ? '👩‍🏫' : '👦')
+                    profileAvatar
                   )}
                 </div>
                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{currentUser.name}</span>
               </button>
               
-              {isRoleMenuOpen && (
+              {!IS_PRODUCTION && isRoleMenuOpen && (
                 <div style={styles.roleDropdown} className="card-solid animate-fade-in">
                   <div style={styles.dropdownHeader}>계정 전환 (데모)</div>
                   <button style={styles.dropdownItem} onClick={() => { switchUser('student', 'student1'); setActiveTab('kids-dashboard'); setIsRoleMenuOpen(false); }}>
@@ -150,18 +164,18 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
         
         {/* 더보기(More) 메뉴 모달 */}
         {isMoreMenuOpen && (
-          <div style={styles.moreBackdrop} onClick={() => setIsMoreMenuOpen(false)}>
+          <div style={styles.moreBackdrop} onClick={() => setMoreMenuOpen(false)}>
             <div style={styles.moreSheet} onClick={(e) => e.stopPropagation()} className="animate-fade-up">
               <div style={styles.moreSheetHeader}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>더보기</h3>
-                <button style={styles.closeBtn} onClick={() => setIsMoreMenuOpen(false)}>✕</button>
+                <button style={styles.closeBtn} onClick={() => setMoreMenuOpen(false)}>✕</button>
               </div>
               <div style={styles.moreProfileCard}>
                 <div style={{...styles.moreAvatar, overflow: 'hidden'}}>
-                  {currentStudent?.imageUrl ? (
-                    <img src={currentStudent.imageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt="profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                   ) : (
-                    currentStudent?.avatar || (currentUser.role === 'teacher' ? '👩‍🏫' : '👦')
+                    profileAvatar
                   )}
                 </div>
                 <div>
@@ -170,12 +184,12 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                 </div>
               </div>
               <div style={{ ...styles.moreMenuList, gap: '12px' }}>
-                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => setIsProfileModalOpen(true)}>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => { setIsProfileModalOpen(true); setMoreMenuOpen(false); }}>
                   <div style={styles.moreMenuIconWrapper}><User size={18} color="#4F46E5" /></div>
                   <span style={styles.moreMenuText}>내 프로필 관리</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
-                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => { setActiveTab('settings'); setIsMoreMenuOpen(false); }}>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={() => { setActiveTab('settings'); setMoreMenuOpen(false); }}>
                   <div style={styles.moreMenuIconWrapper}><Settings size={18} color="#10B981" /></div>
                   <span style={styles.moreMenuText}>앱 설정 / 알림</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
@@ -192,7 +206,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                     <button className="list-item-btn hover-lift" style={{...styles.moreMenuItem, background: 'rgba(16, 185, 129, 0.05)'}} 
                       onClick={() => {
                         switchMode('child');
-                        setIsMoreMenuOpen(false);
+                        setMoreMenuOpen(false);
                       }}>
                       <div style={styles.moreMenuIconWrapper}><User size={18} color="#10B981" /></div>
                       <span style={{...styles.moreMenuText, color: 'var(--primary)'}}>아이 모드로 전환 👦👧</span>
@@ -203,7 +217,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                       onClick={() => {
                         const code = generateChildCode(currentUser.id);
                         setGeneratedCode(code);
-                        setIsMoreMenuOpen(false);
+                        setMoreMenuOpen(false);
                       }}>
                       <div style={styles.moreMenuIconWrapper}><ShieldCheck size={18} color="#F59E0B" /></div>
                       <span style={styles.moreMenuText}>우리 아이 로그인 코드 발급</span>
@@ -219,7 +233,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                       setPinInput('');
                       setPinError('');
                       setPinModalOpen(true);
-                      setIsMoreMenuOpen(false);
+                      setMoreMenuOpen(false);
                     }}>
                     <div style={styles.moreMenuIconWrapper}><Lock size={18} color="#4F46E5" /></div>
                     <span style={{...styles.moreMenuText, color: '#4F46E5'}}>부모님 모드로 돌아가기</span>
@@ -230,7 +244,7 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               <button style={styles.logoutBtn} onClick={async () => { 
                 if (window.confirm('정말 로그아웃 하시겠습니까?')) {
                   await signOut();
-                  setIsMoreMenuOpen(false);
+                  setMoreMenuOpen(false);
                 }
               }}>
                 <LogOut size={18} />
@@ -364,11 +378,12 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
           </div>
         )}
 
-        {/* 프로필 수정 모달 */}
-        <ProfileEditModal 
-          isOpen={isProfileModalOpen} 
-          onClose={() => setIsProfileModalOpen(false)} 
-        />
+        {/* 프로필 수정 모달 (교사/학생 분기) */}
+        {currentUser?.role === 'teacher' ? (
+          <TeacherProfileEditModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+        ) : (
+          <ProfileEditModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+        )}
       </div>
     </div>
   );
@@ -442,7 +457,14 @@ const styles = {
     borderRadius: '24px',
   },
   avatarMini: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     fontSize: '1.1rem',
+    overflow: 'hidden',
   },
   roleDropdown: {
     position: 'absolute',

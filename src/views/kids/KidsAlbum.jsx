@@ -195,8 +195,9 @@ const styles = {
   imageWrapper: {
     width: '100%',
     height: '240px',
+    borderTopLeftRadius: 'calc(var(--radius-md) - 1px)',
+    borderTopRightRadius: 'calc(var(--radius-md) - 1px)',
     overflow: 'hidden',
-    background: '#000',
   },
   image: {
     width: '100%',

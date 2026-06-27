@@ -92,7 +92,13 @@ export default function TeacherAttendance({ setActiveTab }) {
           return (
             <div key={student.id} style={styles.studentCard} className="card-solid hover-lift">
               <div style={styles.studentInfo} onClick={() => openNoteModal(student)} className="cursor-pointer">
-                <div style={styles.avatarMini}>{student.avatar || '👦'}</div>
+                <div style={{...styles.avatarMini, overflow: 'hidden'}}>
+                  {student.imageUrl ? (
+                    <img src={student.imageUrl} alt="student" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    student.avatar || '👦'
+                  )}
+                </div>
                 <div>
                   <div style={styles.studentName}>{student.name}</div>
                   <div style={styles.studentMeta}>누적 출석: {student.attendanceCount}회</div>
@@ -254,6 +260,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '1.4rem',
+    overflow: 'hidden',
   },
   studentName: {
     fontWeight: 700,

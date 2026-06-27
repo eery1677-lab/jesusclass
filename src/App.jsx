@@ -27,7 +27,7 @@ import BannerAd from './components/ads/BannerAd';
 import InterstitialAd from './components/ads/InterstitialAd';
 
 function AppContent() {
-  const { currentUser, authLoading, initFirebaseListeners } = useStore();
+  const { currentUser, authLoading, initFirebaseListeners, chatOpen, setChatOpen } = useStore();
   
   useEffect(() => {
     initFirebaseListeners();
@@ -41,19 +41,16 @@ function AppContent() {
     }
   }, [currentUser?.id, currentUser?.role]);
   
-  const [chatOpen, setChatOpen] = useState(false);
-  const [navCount, setNavCount] = useState(0);
   const [showInterstitial, setShowInterstitial] = useState(false);
+  const [hasShownInitialAd, setHasShownInitialAd] = useState(false);
 
+  // 대표님 요청: 로그인 후 메인에 최초 진입할 때 단 한 번만 전면 광고를 띄워줍니다.
   useEffect(() => {
-    setNavCount(prev => prev + 1);
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (navCount > 1 && navCount % 4 === 0) {
+    if (currentUser && !hasShownInitialAd) {
       setShowInterstitial(true);
+      setHasShownInitialAd(true);
     }
-  }, [navCount]);
+  }, [currentUser, hasShownInitialAd]);
 
   const renderView = () => {
     switch (activeTab) {
@@ -74,17 +71,44 @@ function AppContent() {
       case 'teacher-bulletin':  return <TeacherBulletin setActiveTab={setActiveTab} />;
       case 'teacher-snack':     return <TeacherSnack setActiveTab={setActiveTab} />;
       case 'teacher-schedule':  return <TeacherSchedule setActiveTab={setActiveTab} />;
-      case 'settings':          return <SettingsView />;
+      case 'settings':          return <SettingsView setActiveTab={setActiveTab} />;
       default:                  return <KidsDashboard />;
     }
   };
 
   if (authLoading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', gap: '16px' }}>
-        <div style={{ fontSize: '2rem' }}>✝</div>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>예수클래스를 불러오는 중...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', gap: '20px' }}>
+        {/* 네온 형광 테두리와 나무색 십자가 컨테이너 */}
+        <div style={{
+          width: '74px',
+          height: '74px',
+          borderRadius: '20px',
+          border: '2px solid rgba(16, 185, 129, 0.8)',
+          background: 'var(--bg-card)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 15px rgba(16, 185, 129, 0.25), inset 0 0 10px rgba(16, 185, 129, 0.1)',
+          animation: 'neon-breathe 2s ease-in-out infinite',
+          position: 'relative'
+        }}>
+          <span style={{ fontSize: '2.5rem', color: '#8d6e63', transform: 'translateY(-2px)', fontFamily: 'serif', fontWeight: 'bold' }}>✝</span>
+        </div>
+        
+        {/* 연녹색 로딩 스피너 */}
+        <div style={{ 
+          width: '32px', 
+          height: '32px', 
+          border: '3px solid rgba(16, 185, 129, 0.15)', 
+          borderTop: '3px solid #10B981', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite' 
+        }} />
+        
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '-0.3px', marginTop: '4px' }}>
+          예수클래스를 불러오는 중...
+        </div>
       </div>
     );
   }

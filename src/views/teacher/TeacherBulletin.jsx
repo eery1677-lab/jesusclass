@@ -1,38 +1,50 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '../../store/useStore';
-import { FileText, Plus, Send, Trash2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { FileText, Plus, Send, Trash2, ArrowLeft, Image as ImageIcon, X, Loader } from 'lucide-react';
+import { uploadImage } from '../../utils/uploadImage';
 
 export default function TeacherBulletin({ setActiveTab }) {
   const { bulletins, addBulletin, deleteBulletin } = useStore();
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   
   const fileInputRef = useRef(null);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError('');
+
+    try {
+      const url = await uploadImage(file, 'bulletins', { maxSize: 1600, quality: 0.85 });
+      setImagePreview(url);
+    } catch (err) {
+      console.error('주보 이미지 업로드 실패:', err);
+      setUploadError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleRemoveImage = () => {
     setImagePreview(null);
+    setUploadError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleCreateBulletin = (e) => {
+  const handleCreateBulletin = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || (!newContent.trim() && !imagePreview)) return;
 
-    addBulletin(newTitle, newContent, imagePreview);
+    await addBulletin(newTitle, newContent, imagePreview);
     setNewTitle('');
     setNewContent('');
     handleRemoveImage();
@@ -79,16 +91,25 @@ export default function TeacherBulletin({ setActiveTab }) {
 
           <div className="form-group">
             <label className="form-label">주보 이미지 (선택)</label>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', margin: '4px 0 8px 0', lineHeight: 1.4 }}>
+              ⚠️ 갤럭시 울트라 등 <b>고해상도 모바일 원본 사진</b>은 용량이 커 업로드가 실패할 수 있습니다. 실패 시 <b>화면을 캡처(스크린샷)한 사진</b>이나 <b>카카오톡 다운로드 사진</b>을 이용하시면 즉시 업로드됩니다.
+            </p>
             <input 
               type="file" 
               accept="image/*" 
               onChange={handleImageChange}
               ref={fileInputRef}
+              disabled={isUploading}
               style={{ display: 'none' }}
               id="bulletin-image-upload"
             />
             
-            {imagePreview ? (
+            {isUploading ? (
+              <div style={{...styles.uploadBtn, cursor: 'not-allowed', opacity: 0.7}}>
+                <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>업로드 중... 잠시만 기다려주세요</span>
+              </div>
+            ) : imagePreview ? (
               <div style={styles.imagePreviewContainer}>
                 <img src={imagePreview} alt="주보 미리보기" style={styles.imagePreview} />
                 <button 
@@ -98,12 +119,20 @@ export default function TeacherBulletin({ setActiveTab }) {
                 >
                   <X size={16} />
                 </button>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(16,185,129,0.9)', color: 'white', fontSize: '0.8rem', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
+                  ✅ 업로드 완료!
+                </div>
               </div>
             ) : (
               <label htmlFor="bulletin-image-upload" style={styles.uploadBtn}>
                 <ImageIcon size={20} color="var(--text-muted)" />
-                <span>주보 이미지 첨부하기</span>
+                <span>📱 주보 이미지 첨부 (갤럭시/아이폰 사진 OK)</span>
               </label>
+            )}
+            {uploadError && (
+              <div style={{ marginTop: '8px', color: '#EF4444', fontSize: '0.85rem', fontWeight: 600 }}>
+                ⚠️ {uploadError}
+              </div>
             )}
           </div>
 
@@ -128,17 +157,17 @@ export default function TeacherBulletin({ setActiveTab }) {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              opacity: (!newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 0.6 : 1,
-              cursor: (!newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'not-allowed' : 'pointer',
-              background: (!newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'rgba(139, 92, 246, 0.4)' : '#8B5CF6',
+              opacity: (isUploading || !newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 0.6 : 1,
+              cursor: (isUploading || !newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'not-allowed' : 'pointer',
+              background: (isUploading || !newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'rgba(139, 92, 246, 0.4)' : '#8B5CF6',
               color: 'white',
               border: 'none',
               padding: '12px 24px',
               borderRadius: '24px',
               fontWeight: '700',
-              boxShadow: (!newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'none' : '0 4px 6px rgba(139, 92, 246, 0.2)',
+              boxShadow: (isUploading || !newTitle.trim() || (!newContent.trim() && !imagePreview)) ? 'none' : '0 4px 6px rgba(139, 92, 246, 0.2)',
             }}
-            disabled={!newTitle.trim() || (!newContent.trim() && !imagePreview)}
+            disabled={isUploading || !newTitle.trim() || (!newContent.trim() && !imagePreview)}
           >
             <Send size={16} />
             <span>주보 발행하기</span>

@@ -1,7 +1,8 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,16 +24,19 @@ let app = null;
 let auth = null;
 let db = null;
 let rtdb = null;
+let storage = null;
 
 if (isFirebaseConfigured) {
   try {
-    app = initializeApp(firebaseConfig);
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     rtdb = getDatabase(app);
+    storage = getStorage(app);
   } catch (err) {
     console.error('Firebase 초기화 실패:', err);
   }
 }
 
-export { app, auth, db, rtdb };
+export { app, auth, db, rtdb, storage };
+

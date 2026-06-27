@@ -3,8 +3,8 @@ import { useStore } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
 import { Save, LogOut, User, Shield } from 'lucide-react';
 
-export default function Settings() {
-  const { churchName, updateChurchName, churchContact, updateChurchContact } = useStore();
+export default function Settings({ setActiveTab }) {
+  const { churchName, updateChurchName, churchContact, updateChurchContact, setMoreMenuOpen } = useStore();
   const { firebaseUser, userRole, signOut, isConfigured } = useAuth();
   const [localChurchName, setLocalChurchName] = useState(churchName);
   const [localPhone, setLocalPhone] = useState(churchContact?.phone || '');
@@ -18,6 +18,18 @@ export default function Settings() {
     await updateChurchContact({ phone: localPhone, address: localAddress, email: localEmail });
     setSaving(false);
     alert('설정이 저장되었습니다.');
+    
+    // 저장 후 원래 대시보드로 돌아가면서 더보기 메인 화면 띄워주기
+    if (setActiveTab) {
+      if (userRole === 'teacher') {
+        setActiveTab('teacher-dashboard');
+      } else {
+        setActiveTab('kids-dashboard');
+      }
+    }
+    if (setMoreMenuOpen) {
+      setMoreMenuOpen(true);
+    }
   };
 
   const handleSignOut = async () => {

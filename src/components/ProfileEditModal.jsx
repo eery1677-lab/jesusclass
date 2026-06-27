@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Save, Smile, Check } from 'lucide-react';
+import { X, Camera, Save, Smile, Check, Loader } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { uploadImage } from '../utils/uploadImage';
 
 export default function ProfileEditModal({ isOpen, onClose }) {
   const { currentUser, students, updateStudentProfile, churchName: storeChurchName, updateChurchName } = useStore();
@@ -14,6 +15,8 @@ export default function ProfileEditModal({ isOpen, onClose }) {
   const [allergies, setAllergies] = useState([]);
   const [churchName, setChurchName] = useState('');
   const [showAvatars, setShowAvatars] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     if (isOpen && student) {
@@ -28,7 +31,16 @@ export default function ProfileEditModal({ isOpen, onClose }) {
 
   if (!isOpen || currentUser?.role !== 'student' || !student) return null;
 
-  const avatars = ['👦', '👧', '🧒', '👶', '🧑', '👨', '👩', '👱', '👼', '🦸', '🧚', '🦁', '🐻', '🐼', '🐰'];
+  const avatars = [
+    // 사람 & 어린이
+    '👦', '👧', '🧒', '👶', '🧑', '👨', '👩', '👱', '👨‍🦰', '👩‍🦰', '👨‍🦱', '👩‍🦱', '👱‍♂️', '👱‍♀️',
+    // 꿈 & 판타지
+    '👼', '🦸', '🦸‍♀️', '🧚', '🧚‍♂️', '🧙‍♂️', '🧙‍♀️', '🛸', '🚀', '👑',
+    // 귀여운 동물
+    '🦁', '🐻', '🐼', '🐰', '🐱', '🐶', '🐹', '🐨', '🦊', '🐯', '🦄', '🐳', '🐥', '🦖',
+    // 일상 & 표정
+    '😀', '😆', '😎', '🧸', '🎈', '🎨', '⚽', '🎹', '🎸', '📚'
+  ];
 
   const handleAddAllergy = (e) => {
     e.preventDefault();
@@ -38,48 +50,22 @@ export default function ProfileEditModal({ isOpen, onClose }) {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          // 최대 크기를 300px로 제한
-          const MAX_SIZE = 300;
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // JPEG 형식으로 압축 (품질 0.8)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setImageUrl(dataUrl);
-          setAvatar('');
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      const url = await uploadImage(file, 'profiles/students', { maxSize: 600, quality: 0.85 });
+      setImageUrl(url);
+      setAvatar('');
+    } catch (err) {
+      console.error('학생 프로필 업로드 실패:', err);
+      setUploadError('사진 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -122,18 +108,33 @@ export default function ProfileEditModal({ isOpen, onClose }) {
                   avatar
                 )}
               </div>
-              <button type="button" onClick={() => document.getElementById('profile-upload').click()} style={styles.uploadBtn}>
-                <Camera size={16} color="white" />
+              <button type="button" onClick={() => !isUploading && document.getElementById('profile-upload').click()} style={styles.uploadBtn} disabled={isUploading}>
+                {isUploading ? (
+                  <Loader size={16} color="white" style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Camera size={16} color="white" />
+                )}
               </button>
               <input 
                 id="profile-upload" 
                 type="file" 
                 accept="image/*" 
                 onChange={handleImageUpload} 
+                disabled={isUploading}
                 style={{ display: 'none' }} 
               />
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>사진을 업로드하거나 기본 아바타를 선택하세요.</p>
+            {uploadError && (
+              <div style={{ fontSize: '0.8rem', color: '#EF4444', fontWeight: 600, textAlign: 'center', marginTop: '4px' }}>
+                ⚠️ {uploadError}
+              </div>
+            )}
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', margin: '4px 0 0 0' }}>
+              {isUploading ? '📤 업로드 중...' : '사진을 업로드하거나 기본 아바타를 선택하세요.'}
+            </p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', margin: '8px 16px 0', lineHeight: 1.4, textAlign: 'center' }}>
+              ⚠️ 갤럭시 울트라 등 <b>고해상도 모바일 사진</b>은 용량이 너무 커 업로드가 실패할 수 있습니다. 안 되시는 경우 <b>캡처(스크린샷) 사진</b>이나 <b>카카오톡 다운로드 사진</b>을 올리시거나 아래 <b>기본 아바타</b>를 선택해 주세요!
+            </p>
             
             <button 
               type="button" 
@@ -219,8 +220,8 @@ export default function ProfileEditModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            <button type="submit" style={styles.saveBtn}>
-              <Check size={18} /> 저장하기
+            <button type="submit" style={styles.saveBtn} disabled={isUploading}>
+              {isUploading ? '업로드 중...' : <><Check size={18} /> 저장하기</>}
             </button>
           </form>
         </div>

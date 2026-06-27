@@ -70,7 +70,13 @@ export default function TeacherDalant({ setActiveTab }) {
                   }}
                   onClick={() => setSelectedStudent(student)}
                 >
-                  <div style={styles.avatarMini}>{student.avatar || '👦'}</div>
+                  <div style={{...styles.avatarMini, overflow: 'hidden'}}>
+                    {student.imageUrl ? (
+                      <img src={student.imageUrl} alt="student" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    ) : (
+                      student.avatar || '👦'
+                    )}
+                  </div>
                   <span style={styles.studentName}>{student.name}</span>
                 </div>
               ))}
@@ -159,7 +165,13 @@ export default function TeacherDalant({ setActiveTab }) {
             <div key={student.id} style={styles.rankingCard} className="card-solid hover-lift">
               <div style={styles.rankingLeft}>
                 <div style={styles.rankBadge(index)}>{index + 1}</div>
-                <div style={styles.avatarMini}>{student.avatar || '👦'}</div>
+                <div style={{...styles.avatarMini, overflow: 'hidden'}}>
+                  {student.imageUrl ? (
+                    <img src={student.imageUrl} alt="student" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    student.avatar || '👦'
+                  )}
+                </div>
                 <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{student.name}</div>
               </div>
               <div style={styles.dalantBadge}>

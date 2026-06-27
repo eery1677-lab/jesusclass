@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export default function BannerAd() {
   const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    if (isVisible) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (e) {
+        console.error('AdSense Banner load error:', e);
+      }
+    }
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
@@ -10,7 +20,13 @@ export default function BannerAd() {
     <div style={styles.container}>
       <div style={styles.content}>
         <span style={styles.adLabel}>Ad</span>
-        <span style={styles.adText}>어린이 성경 교재 특별 기획전! (예시 광고)</span>
+        <div style={{ minWidth: '320px', minHeight: '50px' }}>
+          <ins className="adsbygoogle"
+               style={{ display: 'inline-block', width: '320px', height: '50px' }}
+               data-ad-client="ca-pub-7007910390274539" // 대표님 애드몹 ca-pub 번호
+               data-ad-slot="1376655256" // 발급받으신 하단 배너 광고 slot 번호
+               ></ins>
+        </div>
       </div>
       <button style={styles.closeBtn} onClick={() => setIsVisible(false)}>
         <X size={16} />
