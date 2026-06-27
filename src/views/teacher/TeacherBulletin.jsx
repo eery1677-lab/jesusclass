@@ -224,13 +224,10 @@ export default function TeacherBulletin({ setActiveTab }) {
 
 const styles = {
   container: {
-    padding: '20px',
-    paddingBottom: '100px', // 하단 잘림 방지
-    maxWidth: '800px',
-    margin: '0 auto',
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '16px',
+    paddingBottom: '80px',
   },
   headerPanel: {
     display: 'flex',
@@ -243,7 +240,7 @@ const styles = {
   },
   section: {
     background: 'white',
-    padding: '24px 32px',
+    padding: '20px',
     borderRadius: 'var(--radius-lg)',
   },
   form: {
@@ -305,7 +302,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
-    padding: '24px',
+    padding: '20px',
     borderRadius: 'var(--radius-lg)',
   },
   bulletinHeader: {
