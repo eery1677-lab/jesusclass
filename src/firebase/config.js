@@ -5,20 +5,17 @@ import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCiOEyKwlW8S-9nKq-_gRx6YOgbkiIo4kE",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "jesusclass-app-2026.firebaseapp.com",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://jesusclass-app-2026-default-rtdb.firebaseio.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "jesusclass-app-2026",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "jesusclass-app-2026.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "54216310857",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:54216310857:web:4f6d71dfee7df2d2febf98",
 };
 
-// Firebase가 실제로 설정되었는지 확인 (빈 값이면 데모 모드로 동작)
-export const isFirebaseConfigured = !!(
-  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-  import.meta.env.VITE_FIREBASE_PROJECT_ID.trim() !== ''
-);
+// 기본 펄백 설정 또는 환경 변수가 등록되어 있으면 Firebase 모드로 정상 작동합니다.
+export const isFirebaseConfigured = true;
 
 let app = null;
 let auth = null;

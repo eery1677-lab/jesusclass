@@ -1,22 +1,3 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-
-const firebaseConfig = {
-  projectId: "jesusclass-app-2026",
-  appId: "1:54216310857:web:4f6d71dfee7df2d2febf98",
-  storageBucket: "jesusclass-app-2026.firebasestorage.app",
-  apiKey: "AIzaSyCiOEyKwlW8S-9nKq-_gRx6YOgbkiIo4kE",
-  authDomain: "jesusclass-app-2026.firebaseapp.com",
-  messagingSenderId: "54216310857"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
-
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+// Firebase 구버전 호환용 진입점
+// 실제 설정은 ./firebase/index.js 에서 모듈화하여 관리합니다.
+export { auth, db, rtdb, app, isFirebaseConfigured, googleProvider } from './firebase/index.js';
