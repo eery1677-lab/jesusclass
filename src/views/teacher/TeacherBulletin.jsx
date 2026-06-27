@@ -239,10 +239,12 @@ const styles = {
     padding: '20px',
     background: 'linear-gradient(135deg, #F5F3FF 0%, #ffffff 100%)',
     borderLeft: '4px solid #8B5CF6',
+    borderRadius: 'var(--radius-lg)',
   },
   section: {
     background: 'white',
     padding: '24px 32px',
+    borderRadius: 'var(--radius-lg)',
   },
   form: {
     display: 'flex',

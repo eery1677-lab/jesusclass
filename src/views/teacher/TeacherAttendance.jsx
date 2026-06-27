@@ -209,6 +209,7 @@ const styles = {
     padding: '20px',
     background: 'linear-gradient(135deg, #ECFDF5 0%, #ffffff 100%)',
     borderLeft: '4px solid #10B981',
+    borderRadius: 'var(--radius-lg)',
   },
   datePickerCard: {
     padding: '16px',
@@ -216,6 +217,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '12px',
+    borderRadius: 'var(--radius-lg)',
   },
   dateLabel: {
     display: 'flex',
@@ -245,6 +247,7 @@ const styles = {
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '16px',
+    borderRadius: 'var(--radius-lg)',
   },
   studentInfo: {
     display: 'flex',
