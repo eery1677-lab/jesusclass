@@ -28,8 +28,26 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
+          const isTeacherEmail = user.email === 'eery1677@gmail.com' || user.email === 'eery1767@gmail.com';
           const snap = await getDoc(doc(db, 'users', user.uid));
-          if (snap.exists()) {
+          
+          if (isTeacherEmail) {
+            const defaultName = snap.exists() ? (snap.data().name || user.displayName || '박사랑 선생님') : (user.displayName || '박사랑 선생님');
+            const teacherData = {
+              role: 'teacher',
+              name: defaultName,
+              email: user.email || '',
+              createdAt: snap.exists() ? (snap.data().createdAt || new Date().toISOString()) : new Date().toISOString()
+            };
+            
+            if (!snap.exists() || snap.data().role !== 'teacher') {
+              await setDoc(doc(db, 'users', user.uid), teacherData);
+            }
+            
+            setUserRole('teacher');
+            setFirebaseUser({ ...user, displayName: defaultName });
+            setNeedsRoleSelection(false);
+          } else if (snap.exists()) {
             const data = snap.data();
             setUserRole(data.role);
             setFirebaseUser({ ...user, displayName: data.name || user.displayName });

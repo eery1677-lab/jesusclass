@@ -3,10 +3,10 @@ import { useStore } from '../../store/useStore';
 import { ArrowLeft, Coffee, Search, Check, Edit2, Gift, Save } from 'lucide-react';
 
 export default function TeacherSnack({ setActiveTab }) {
-  const { snacks, snackRequests, updateSnackMenu, setChatOpen, setActiveChatStudentId } = useStore();
+  const { snacks, snackRequests, updateSnackMenu, addSnack, setChatOpen, setActiveChatStudentId } = useStore();
   
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({ menu: '', sponsor: '', emoji: '' });
+  const [editForm, setEditForm] = useState({ menu: '', sponsor: '', emoji: '', date: '' });
 
   // 간단한 이모지 자동 매칭 사전
   const emojiDict = {
@@ -29,7 +29,7 @@ export default function TeacherSnack({ setActiveTab }) {
 
   const startEdit = (snack) => {
     setEditingId(snack.id);
-    setEditForm({ menu: snack.menu, sponsor: snack.sponsor, emoji: snack.emoji });
+    setEditForm({ menu: snack.menu, sponsor: snack.sponsor, emoji: snack.emoji, date: snack.date || '' });
   };
 
   const cancelEdit = () => {
@@ -50,7 +50,8 @@ export default function TeacherSnack({ setActiveTab }) {
     updateSnackMenu(id, {
       menu: editForm.menu,
       sponsor: editForm.sponsor,
-      emoji: editForm.emoji
+      emoji: editForm.emoji,
+      date: editForm.date
     });
     setEditingId(null);
   };
@@ -93,7 +94,14 @@ export default function TeacherSnack({ setActiveTab }) {
                   <div style={styles.editForm}>
                     <div style={styles.editRow}>
                       <span style={styles.weekLabel}>{snack.week}</span>
-                      <span style={styles.dateLabel}>{snack.date}</span>
+                      <input 
+                        type="text" 
+                        value={editForm.date}
+                        onChange={e => setEditForm({...editForm, date: e.target.value})}
+                        style={{...styles.input, width: '100px'}}
+                        className="form-input neon-input"
+                        placeholder="예: 7월 6일"
+                      />
                     </div>
                     
                     <div style={styles.inputGroup}>
@@ -170,6 +178,26 @@ export default function TeacherSnack({ setActiveTab }) {
                 )}
               </div>
             ))}
+            
+            <button 
+              onClick={() => {
+                const nextWeekNum = (snacks?.length || 0) + 1;
+                addSnack({
+                  id: `snack_week${nextWeekNum}_${Date.now()}`,
+                  week: `${nextWeekNum}주`,
+                  date: '날짜 미정',
+                  menu: '메뉴 미정',
+                  sponsor: '',
+                  emoji: '🍽️',
+                  isCurrent: false
+                });
+              }}
+              style={styles.addWeekBtn}
+              className="hover-lift"
+            >
+              <Plus size={20} />
+              <span>새 주차 추가하기</span>
+            </button>
           </div>
         </section>
 
@@ -476,5 +504,20 @@ const styles = {
     background: 'white',
     borderRadius: 'var(--radius-lg)',
     border: '1px dashed var(--border-light)',
+  },
+  addWeekBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '16px',
+    background: 'transparent',
+    border: '2px dashed var(--border-light)',
+    borderRadius: 'var(--radius-lg)',
+    color: 'var(--text-muted)',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
   }
 };

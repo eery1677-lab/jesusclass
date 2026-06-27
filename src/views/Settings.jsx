@@ -45,18 +45,18 @@ export default function Settings({ setActiveTab }) {
 
       {/* 계정 정보 카드 */}
       {isConfigured && firebaseUser && (
-        <div className="card" style={{ padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="card" style={{ padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           {firebaseUser.photoURL
-            ? <img src={firebaseUser.photoURL} alt="프로필" style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid var(--border-color)' }} />
-            : <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={24} color="white" /></div>
+            ? <img src={firebaseUser.photoURL} alt="프로필" style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid var(--border-color)', flexShrink: 0 }} />
+            : <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><User size={24} color="white" /></div>
           }
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', wordBreak: 'break-all' }}>
               {firebaseUser.displayName || '사용자'}
             </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{firebaseUser.email}</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{firebaseUser.email}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(99,102,241,0.12)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(99,102,241,0.12)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, flexShrink: 0 }}>
             <Shield size={12} />
             {userRole === 'teacher' ? '교사' : '학부모'}
           </div>

@@ -22,7 +22,7 @@ export default function ChatModal({ isOpen, onClose }) {
   const [realtimeMessages, setRealtimeMessages] = useState([]);
 
   // 현재 사용할 messages (Firebase 연결 여부에 따라)
-  const messages = isFirebaseConfigured ? realtimeMessages : storeMessages;
+  const messages = isFirebaseConfigured ? (realtimeMessages || []) : (storeMessages || []);
   
   const [inputText, setInputText] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
@@ -90,7 +90,7 @@ export default function ChatModal({ isOpen, onClose }) {
       // initFirebaseListeners에서 id: userData.studentId || user.uid 로 설정됨
       // students 목록에 있는 ID이면 그대로 사용, 없으면 첫번째 학생으로 fallback
       const matchedStudent = students.find(s => s.id === currentUser.id);
-      const chatId = matchedStudent ? matchedStudent.id : (students[0]?.id || currentUser.id);
+      const chatId = matchedStudent ? matchedStudent.id : (students[0]?.id || currentUser.id || currentUser.uid);
       setActiveChatStudentId(chatId);
     }
     
@@ -146,7 +146,7 @@ export default function ChatModal({ isOpen, onClose }) {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    const senderId = currentUser.role === 'teacher' ? 'teacher1' : currentUser.id;
+    const senderId = currentUser.role === 'teacher' ? 'teacher1' : (currentUser.id || currentUser.uid);
     const senderName = currentUser.name;
 
     let scheduledFor = null;
@@ -184,7 +184,7 @@ export default function ChatModal({ isOpen, onClose }) {
       '2. 카카오톡 채팅방에 보낸 후 다운로드한 사진을 올려보세요.'
     );
 
-    const senderId = currentUser.role === 'teacher' ? 'teacher1' : currentUser.id;
+    const senderId = currentUser.role === 'teacher' ? 'teacher1' : (currentUser.id || currentUser.uid);
     const senderName = currentUser.name;
 
     setIsChatImageUploading(true);
@@ -248,7 +248,29 @@ export default function ChatModal({ isOpen, onClose }) {
     }
   };
 
-  const selectedStudent = students.find(s => s.id === activeChatStudentId);
+  // 대기 중인(매핑되지 않은) 학부모 대화방 목록 추출하여 교사 목록에 합치기
+  const unmatchedChats = [];
+  const studentIds = new Set(students?.map(s => s.id) || []);
+  
+  (storeMessages || []).forEach(msg => {
+    if (msg.studentId && !studentIds.has(msg.studentId) && msg.studentId !== 'teacher1') {
+      if (!unmatchedChats.some(c => c.id === msg.studentId)) {
+        // 마지막 메시지를 발송한 학부모의 이름을 따옴
+        const chatMsgs = (storeMessages || []).filter(m => m.studentId === msg.studentId);
+        const lastParentMsg = [...chatMsgs].reverse().find(m => m.senderId !== 'teacher1');
+        
+        unmatchedChats.push({
+          id: msg.studentId,
+          name: lastParentMsg ? lastParentMsg.senderName : '대기 중인 학부모님',
+          avatar: '👤',
+          isUnmatchedParent: true
+        });
+      }
+    }
+  });
+
+  const allChatsForTeacher = [...students, ...unmatchedChats];
+  const selectedStudent = allChatsForTeacher.find(s => s.id === activeChatStudentId);
 
   // 안식일 모드(DND) 동작 여부 체크
   const isDNDActive = () => {
@@ -311,43 +333,53 @@ export default function ChatModal({ isOpen, onClose }) {
           {currentUser.role === 'teacher' && !activeChatStudentId && (
             <div style={{...styles.studentList, width: '100%', borderRight: 'none'}}>
               <div style={styles.listTitle}>학생 대화방</div>
-              {students.map(s => {
-                const studentMsgs = messages.filter(m => m.studentId === s.id);
-                const lastMsg = studentMsgs[studentMsgs.length - 1];
-                const unreadCount = studentMsgs.filter(m => m.senderId !== 'teacher1' && !m.isRead).length;
+              {allChatsForTeacher.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💬</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '6px', color: 'var(--text-main)' }}>아직 대화방이 없습니다</div>
+                  <div style={{ fontSize: '0.82rem', lineHeight: 1.6 }}>
+                    학부모/학생이 앱에 가입하면<br/>여기에 대화방이 생성됩니다.
+                  </div>
+                </div>
+              ) : (
+                allChatsForTeacher.map(s => {
+                  const studentMsgs = (storeMessages || []).filter(m => m.studentId === s.id);
+                  const lastMsg = studentMsgs[studentMsgs.length - 1];
+                  const unreadCount = studentMsgs.filter(m => m.senderId !== 'teacher1' && !m.isRead).length;
 
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => setActiveChatStudentId(s.id)}
-                    style={styles.studentItem(activeChatStudentId === s.id)}
-                  >
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                      {s.imageUrl ? (
-                        <img src={s.imageUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <span style={{ fontSize: '1.2rem' }}>{s.avatar || '👦'}</span>
-                      )}
-                    </div>
-                    <div style={styles.studentItemText}>
-                      <div style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
-                        {s.name}
-                        {unreadCount > 0 && (
-                          <span style={styles.unreadBadge}>{unreadCount}</span>
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => setActiveChatStudentId(s.id)}
+                      style={styles.studentItem(activeChatStudentId === s.id)}
+                    >
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                        {s.imageUrl ? (
+                          <img src={s.imageUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '1.2rem' }}>{s.avatar || '👦'}</span>
                         )}
                       </div>
-                      <div style={styles.lastMsgText}>
-                        {lastMsg ? lastMsg.content : '대화 기록 없음'}
+                      <div style={styles.studentItemText}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
+                          {s.name} {s.isUnmatchedParent ? '(신규 학부모)' : ''}
+                          {unreadCount > 0 && (
+                            <span style={styles.unreadBadge}>{unreadCount}</span>
+                          )}
+                        </div>
+                        <div style={styles.lastMsgText}>
+                          {lastMsg ? lastMsg.content : '대화 기록 없음'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           )}
 
           {/* Chat Room Area */}
-          {(currentUser.role === 'student' || activeChatStudentId) && (
+          {(currentUser.role === 'student' || currentUser.role === 'parent' || activeChatStudentId) && (
             <div style={styles.chatArea}>
             {currentUser.role === 'teacher' && selectedStudent && (
               <div style={styles.chatRoomHeader}>
@@ -368,7 +400,7 @@ export default function ChatModal({ isOpen, onClose }) {
                 </div>
               </div>
             )}
-            {currentUser.role === 'student' && (
+            {(currentUser.role === 'student' || currentUser.role === 'parent') && (
               <div style={styles.chatRoomHeader}>
                 <button style={styles.headerIconBtn}>
                   <ChevronLeft size={24} />
@@ -382,7 +414,7 @@ export default function ChatModal({ isOpen, onClose }) {
             )}
             
             {/* 학생용 DND 알림 배너 */}
-            {currentUser.role === 'student' && dndActive && (
+            {(currentUser.role === 'student' || currentUser.role === 'parent') && dndActive && (
               <div style={styles.dndBanner}>
                 <Moon size={16} />
                 <span>지금은 선생님의 <b>안식일(휴식) 시간</b>입니다. 급한 용무가 아니면 답변이 늦어질 수 있습니다. ({teacherSettings.dndStart} ~ {teacherSettings.dndEnd})</span>
@@ -401,7 +433,7 @@ export default function ChatModal({ isOpen, onClose }) {
                 (() => {
                   let currentDateHeader = '';
                   return filteredMessages.map((msg, index) => {
-                    const isMe = msg.senderId === (currentUser.role === 'teacher' ? 'teacher1' : currentUser.id);
+                    const isMe = msg.senderId === (currentUser.role === 'teacher' ? 'teacher1' : (currentUser.id || currentUser.uid));
                     const isScheduled = msg.scheduledFor && new Date(msg.scheduledFor) > new Date();
                     
                     const dateHeader = formatDateHeader(msg.timestamp);

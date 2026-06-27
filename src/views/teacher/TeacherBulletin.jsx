@@ -304,6 +304,7 @@ const styles = {
     flexDirection: 'column',
     gap: '12px',
     padding: '24px',
+    borderRadius: 'var(--radius-lg)',
   },
   bulletinHeader: {
     display: 'flex',

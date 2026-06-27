@@ -170,9 +170,39 @@ export const useStore = create((set, get) => ({
     // Firebase 인증 상태 리스너
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // users 컬렉션에서 권한 가져오기
+        const isTeacherEmail = user.email === 'eery1677@gmail.com' || user.email === 'eery1767@gmail.com';
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
+        
+        if (isTeacherEmail) {
+          const defaultName = userDoc.exists() ? (userDoc.data().name || user.displayName || '박사랑 선생님') : (user.displayName || '박사랑 선생님');
+          const teacherData = {
+            role: 'teacher',
+            name: defaultName,
+            email: user.email || '',
+            createdAt: userDoc.exists() ? (userDoc.data().createdAt || new Date().toISOString()) : new Date().toISOString()
+          };
+          
+          if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
+            try {
+              await setDoc(doc(db, 'users', user.uid), teacherData);
+            } catch (e) {
+              console.error('교사 권한 강제 업데이트 실패:', e);
+            }
+          }
+          
+          set({ 
+            currentUser: { 
+              uid: user.uid, 
+              email: user.email,
+              name: defaultName,
+              role: 'teacher', 
+              id: null,
+              mode: 'teacher',
+              isChildDirectLogin: false
+            },
+            authLoading: false
+          });
+        } else if (userDoc.exists()) {
           const userData = userDoc.data();
           set({ 
             currentUser: { 
@@ -187,14 +217,30 @@ export const useStore = create((set, get) => ({
             authLoading: false
           });
         } else {
-          // 권한 정보가 없으면 신규 가입자이므로 진짜 빈 학부모(parent) 계정 생성
+          // 권한 정보가 없으면 신규 가입자이므로 자동 가입 처리
+          const defaultRole = 'parent';
+          const defaultName = user.displayName || '학부모님';
+          
+          const userData = {
+            role: defaultRole,
+            name: defaultName,
+            email: user.email || '',
+            createdAt: new Date().toISOString()
+          };
+          
+          try {
+            await setDoc(doc(db, 'users', user.uid), userData);
+          } catch (e) {
+            console.error('신규 가입 사용자 DB 저장 실패:', e);
+          }
+
           set({ 
             currentUser: { 
               uid: user.uid, 
               email: user.email,
-              name: user.displayName || '학부모님',
-              role: 'parent', 
-              id: null, // 임시 더미 매핑 완전 차단
+              name: defaultName,
+              role: defaultRole, 
+              id: null,
               mode: 'parent',
               isChildDirectLogin: false
             },
@@ -518,6 +564,12 @@ export const useStore = create((set, get) => ({
   updateSnackMenu: async (snackId, updates) => {
     try {
       await updateDoc(doc(db, "snacks", snackId), updates);
+    } catch (e) { console.error(e); }
+  },
+
+  addSnack: async (newSnack) => {
+    try {
+      await setDoc(doc(db, "snacks", newSnack.id || `snack_${Date.now()}`), newSnack);
     } catch (e) { console.error(e); }
   },
 

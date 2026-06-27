@@ -35,11 +35,13 @@ function AppContent() {
   
   const [activeTab, setActiveTab] = useState('kids-dashboard');
   
+  // currentUser가 로드될 때마다 (role이 확정될 때) 올바른 탭으로 이동
+  // currentUser.uid를 사용 — 교사는 id가 null이므로 uid 기준으로 추적
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.role) {
       setActiveTab(currentUser.role === 'teacher' ? 'teacher-dashboard' : 'kids-dashboard');
     }
-  }, [currentUser?.id, currentUser?.role]);
+  }, [currentUser?.uid, currentUser?.role]);
   
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [hasShownInitialAd, setHasShownInitialAd] = useState(false);

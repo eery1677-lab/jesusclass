@@ -44,20 +44,61 @@ export default function KidsDashboard({ setActiveTab }) {
 
   if (!student) {
     return (
-      <div style={{ ...styles.container, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px', textAlign: 'center' }}>
-        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContext: 'center', marginBottom: '20px', justifyContent: 'center' }}>
-          <Lock size={40} color="#3B82F6" />
+      <div style={{ ...styles.container, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '24px', textAlign: 'center' }}>
+        <div style={{ 
+          width: '80px', 
+          height: '80px', 
+          borderRadius: '24px', 
+          background: 'rgba(16, 185, 129, 0.1)', 
+          border: '2px solid rgba(16, 185, 129, 0.2)',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          marginBottom: '24px',
+          boxShadow: '0 8px 20px rgba(16, 185, 129, 0.1)'
+        }}>
+          <Lock size={36} color="#10B981" />
         </div>
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px' }}>⛪ 예수클래스에 오신 것을 환영합니다!</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto 25px auto' }}>
+        <h2 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '12px', wordBreak: 'keep-all', overflowWrap: 'break-word', color: 'var(--text-main)', lineHeight: '1.4' }}>
+          ⛪ 예수클래스에 오신 것을 환영합니다!
+        </h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto 28px auto', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
           학부모(또는 학생) 계정 가입이 안전하게 완료되었습니다!<br />
           아직 매핑된 자녀 학생 정보가 존재하지 않습니다.
         </p>
         
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '360px', marginBottom: '30px', textAlign: 'left' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>💡 다음 단계 안내</h4>
-          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.8' }}>
-            <li>담당 주일학교 반 선생님께 연락하여 신규 가입하신 이메일(<strong style={{ color: 'var(--accent-color)' }}>{currentUser?.email}</strong>)을 말씀해 주세요.</li>
+        <div style={{ 
+          background: 'var(--bg-card)', 
+          border: '1px solid var(--border-color)', 
+          borderRadius: '20px', 
+          padding: '24px', 
+          width: '100%', 
+          maxWidth: '380px', 
+          marginBottom: '32px', 
+          textAlign: 'left',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <h4 style={{ margin: '0 0 14px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>💡</span> 다음 단계 안내
+          </h4>
+          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.8', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+            <li style={{ marginBottom: '10px' }}>
+              담당 주일학교 반 선생님께 연락하여 신규 가입하신 이메일을 말씀해 주세요.
+              <div style={{ 
+                marginTop: '6px', 
+                background: 'var(--bg-main)', 
+                padding: '6px 12px', 
+                borderRadius: '8px', 
+                fontSize: '0.85rem', 
+                fontFamily: 'monospace',
+                color: 'var(--primary)',
+                border: '1px solid var(--border-color)',
+                display: 'inline-block',
+                fontWeight: 600
+              }}>
+                {currentUser?.email}
+              </div>
+            </li>
             <li>선생님이 교사용 대시보드에서 자녀 정보 매핑을 승인하시는 즉시 대시보드가 정상 활성화됩니다.</li>
           </ol>
         </div>
@@ -68,7 +109,20 @@ export default function KidsDashboard({ setActiveTab }) {
             const { auth } = await import('../../firebase');
             await signOut(auth);
           }}
-          style={{ padding: '12px 24px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+          style={{ 
+            padding: '12px 32px', 
+            borderRadius: '12px', 
+            background: 'var(--bg-card)', 
+            border: '1px solid var(--border-color)', 
+            color: 'var(--text-main)', 
+            fontSize: '0.9rem', 
+            fontWeight: 700, 
+            cursor: 'pointer',
+            transition: 'var(--transition-smooth)',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-main)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card)'}
         >
           로그아웃
         </button>
