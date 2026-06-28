@@ -18,13 +18,14 @@ import {
   Phone,
   Mail,
   X,
-  Lock
+  Lock,
+  Share2
 } from 'lucide-react';
 import ProfileEditModal from './ProfileEditModal';
 import TeacherProfileEditModal from './TeacherProfileEditModal';
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenChat }) {
-  const { currentUser, switchUser, churchName, churchContact, students, teacherSettings, isMoreMenuOpen, setMoreMenuOpen } = useStore();
+  const { currentUser, switchUser, churchName, churchContact, students, teacherSettings, isMoreMenuOpen, setMoreMenuOpen, switchMode, generateChildCode } = useStore();
   const { signOut } = useAuth();
   const currentStudent = students?.find(s => s.id === currentUser.id);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
@@ -34,6 +35,32 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [generatedCode, setGeneratedCode] = useState(null);
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: '지저스클래스 (JesusClass)',
+      text: '재미난 미션 달란트 보상 시스템과 초등학교 알림장 기능이 합쳐진 프리미엄 주일학교 소통 플랫폼입니다. ⛪✨',
+      url: 'https://jesusclass.xyz'
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('공유 실패:', err);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        alert('지저스클래스 접속 주소가 클립보드에 복사되었습니다! 카톡이나 문자에 붙여넣어(Ctrl+V) 공유해 주세요. 🔗\n\n주소: https://jesusclass.xyz');
+      } catch (err) {
+        console.error('클립보드 복사 실패:', err);
+        alert('주소 복사에 실패했습니다. 아래 주소를 직접 복사해 주세요:\nhttps://jesusclass.xyz');
+      }
+    }
+  };
 
   // 교사와 학생 각각의 프로필 정보 정의
   const profileImageUrl = currentUser.role === 'teacher' 
@@ -199,6 +226,11 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                   <span style={styles.moreMenuText}>교회 연락처 및 오시는 길</span>
                   <ChevronRight size={18} color="var(--text-muted)" />
                 </button>
+                <button className="list-item-btn hover-lift" style={styles.moreMenuItem} onClick={handleShareApp}>
+                  <div style={styles.moreMenuIconWrapper}><Share2 size={18} color="#EC4899" /></div>
+                  <span style={styles.moreMenuText}>지저스클래스 공유하기 🔗</span>
+                  <ChevronRight size={18} color="var(--text-muted)" />
+                </button>
                 
                 {/* 부모 모드 전환 및 로그인 코드 발급 (학부모 계정 전용) */}
                 {currentUser.mode === 'parent' && (
@@ -214,8 +246,8 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
                     </button>
                     
                     <button className="list-item-btn hover-lift" style={{...styles.moreMenuItem}} 
-                      onClick={() => {
-                        const code = generateChildCode(currentUser.id);
+                      onClick={async () => {
+                        const code = await generateChildCode(currentUser.id);
                         setGeneratedCode(code);
                         setMoreMenuOpen(false);
                       }}>

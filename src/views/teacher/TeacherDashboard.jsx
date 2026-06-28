@@ -19,7 +19,7 @@ import {
 import TeacherProfileEditModal from '../../components/TeacherProfileEditModal';
 
 export default function TeacherDashboard({ setActiveTab }) {
-  const { currentUser, students, approveMission, rejectMission, teacherSettings, addMissionFeedback } = useStore();
+  const { currentUser, students, approveMission, rejectMission, teacherSettings, addMissionFeedback, users, approveStudentMapping } = useStore();
   const teacherName = teacherSettings?.name || currentUser.name || "박사랑 선생님";
   const teacherClassName = teacherSettings?.className || "열매 맺는 반";
   const teacherAvatar = teacherSettings?.avatar || currentUser.avatar || '👩‍🏫';
@@ -122,6 +122,41 @@ export default function TeacherDashboard({ setActiveTab }) {
                 <div style={styles.statLabel}>미확인 제출건</div>
                 <div style={styles.statValue}>{pendingMissions.length}건</div>
               </div>
+            </div>
+          </section>
+
+          {/* 2.5. 자녀 정보 매핑 승인 */}
+          <section style={styles.sectionContainer}>
+            <div className="card-solid hover-lift" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} style={{ color: 'var(--primary)' }} />
+                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>자녀 정보 매핑 승인 대기</h4>
+              </div>
+              
+              {(() => {
+                const unmappedUsers = (users || []).filter(u => u.role === 'parent' && !u.studentId);
+                
+                if (unmappedUsers.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '10px 0' }}>
+                      대기 중인 자녀 연결 요청이 없습니다.
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {unmappedUsers.map(user => (
+                      <MappingRow 
+                        key={user.id} 
+                        user={user} 
+                        students={students} 
+                        onApprove={approveStudentMapping} 
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </section>
         </div>
@@ -316,6 +351,63 @@ export default function TeacherDashboard({ setActiveTab }) {
         isOpen={isProfileModalOpen} 
         onClose={() => setIsProfileModalOpen(false)} 
       />
+    </div>
+  );
+}
+
+function MappingRow({ user, students, onApprove }) {
+  const [selectedStudentId, setSelectedStudentId] = React.useState(students[0]?.id || '');
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '8px', 
+      padding: '12px', 
+      background: 'var(--bg-app)', 
+      borderRadius: '12px',
+      border: '1.5px solid var(--border-light)' 
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'left' }}>{user.name}</span>
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace', textAlign: 'left' }}>{user.email}</span>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <select 
+          value={selectedStudentId} 
+          onChange={(e) => setSelectedStudentId(e.target.value)}
+          style={{ 
+            flex: 1, 
+            padding: '6px 10px', 
+            borderRadius: '8px', 
+            border: '1px solid var(--border-strong)', 
+            background: 'var(--bg-card)', 
+            color: 'var(--text-main)', 
+            fontSize: '0.85rem',
+            outline: 'none'
+          }}
+        >
+          <option value="">-- 학생 선택 --</option>
+          {students.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({s.grade})</option>
+          ))}
+        </select>
+        <button 
+          className="btn btn-primary"
+          style={{ padding: '6px 14px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+          onClick={() => {
+            if (!selectedStudentId) {
+              alert('연결할 학생을 선택해 주세요.');
+              return;
+            }
+            if (window.confirm(`${user.name} 학부모님을 학생 ${students.find(s => s.id === selectedStudentId)?.name}와 연결하시겠습니까?`)) {
+              onApprove(user.id, selectedStudentId);
+            }
+          }}
+        >
+          승인
+        </button>
+      </div>
     </div>
   );
 }

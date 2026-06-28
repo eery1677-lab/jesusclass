@@ -82,9 +82,9 @@ export default function TeacherAttendance({ setActiveTab }) {
       </section>
 
       <div style={styles.datePickerCard} className="card-solid hover-lift">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '180px' }}>
           <label style={styles.dateLabel} htmlFor="date-select">
-            <CalendarIcon size={18} />
+            <CalendarIcon size={16} />
             <span>날짜 선택</span>
           </label>
           <input 
@@ -97,7 +97,22 @@ export default function TeacherAttendance({ setActiveTab }) {
         </div>
         <button 
           className="btn"
-          style={{ background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '10px 16px', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+          style={{ 
+            background: 'var(--primary)', 
+            color: 'white', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '4px', 
+            fontSize: '0.85rem', 
+            padding: '8px 14px', 
+            borderRadius: '12px', 
+            border: 'none', 
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
           onClick={() => setIsAddModalOpen(true)}
         >
           ➕ 학생 추가
@@ -249,7 +264,14 @@ export default function TeacherAttendance({ setActiveTab }) {
               <div className="form-group" style={{ marginTop: '16px' }}>
                 <label className="form-label" style={{ fontWeight: 700, display: 'block', marginBottom: '8px' }}>대표 캐릭터 (아바타)</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['👦', '👧', '👶', '🦁', '🐰', '🐻', '🐼', '🐱', '🐶'].map(emoji => (
+                  {[
+                    // 사람 & 어린이
+                    '👦', '👧', '🧒', '👶', '🧑', '👱', '👱‍♂️', '👱‍♀️', '👼', '🦸', '🦸‍♀️', '🧚', '🧚‍♂️',
+                    // 귀여운 동물
+                    '🦁', '🐯', '🐼', '🐨', '🦊', '🐰', '🐻', '🐹', '🐱', '🐶', '🐸', '🦖', '🦄', '🐳', '🐥', '🐝', '🦉',
+                    // 일상 & 창의
+                    '🎨', '⚽', '🎹', '🎸', '🚀', '🎮', '🎈', '🧸', '⭐', '🍀', '🍎', '🎁', '👑'
+                  ].map(emoji => (
                     <button
                       key={emoji}
                       style={{
@@ -317,28 +339,35 @@ const styles = {
     borderRadius: 'var(--radius-lg)',
   },
   datePickerCard: {
-    padding: '16px',
+    padding: '12px 16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '12px',
+    gap: '8px',
+    flexWrap: 'wrap',
     borderRadius: 'var(--radius-lg)',
   },
   dateLabel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '4px',
     fontWeight: 600,
+    fontSize: '0.9rem',
     color: 'var(--text-main)',
+    whiteSpace: 'nowrap',
   },
   dateInput: {
-    padding: '10px 14px',
+    padding: '8px 12px',
     borderRadius: '12px',
     border: '1px solid var(--border-light)',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     fontFamily: 'inherit',
     outline: 'none',
-    width: '180px',
+    width: '125px',
+    flex: '1',
+    minWidth: '110px',
+    background: 'var(--bg-main)',
+    color: 'var(--text-main)',
   },
   listContainer: {
     display: 'flex',

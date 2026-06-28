@@ -43,6 +43,7 @@ export const useStore = create((set, get) => ({
 
   // 2. Firebase 상태 저장소
   students: [],
+  users: [],
   notices: [],
   albums: [],
   messages: [],
@@ -56,8 +57,16 @@ export const useStore = create((set, get) => ({
   childLoginCodes: {},
   
   // 자녀용 코드 발급
-  generateChildCode: (studentId) => {
+  generateChildCode: async (studentId) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6자리 랜덤
+    try {
+      await setDoc(doc(db, "childLoginCodes", code), {
+        studentId,
+        createdAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error("자녀 코드 저장 에러:", e);
+    }
     set(state => ({
       childLoginCodes: { ...state.childLoginCodes, [code]: studentId }
     }));
@@ -66,7 +75,30 @@ export const useStore = create((set, get) => ({
   
   // 자녀 전용 코드로 로그인
   loginWithChildCode: async (code) => {
-    const studentId = get().childLoginCodes[code];
+    // 1. 먼저 로컬 상태에서 코드 확인
+    let studentId = get().childLoginCodes[code];
+    
+    // 2. 로컬에 없는 경우 Firestore에서 조회
+    if (!studentId) {
+      try {
+        const codeDoc = await getDoc(doc(db, "childLoginCodes", code));
+        if (codeDoc.exists()) {
+          const data = codeDoc.data();
+          // 만료 시간 체크 (15분 초과 시 만료)
+          const createdAt = new Date(data.createdAt);
+          const now = new Date();
+          const diffMinutes = (now - createdAt) / (1000 * 60);
+          if (diffMinutes < 15) {
+            studentId = data.studentId;
+          } else {
+            console.log("코드가 만료되었습니다.");
+          }
+        }
+      } catch (e) {
+        console.error("자녀 코드 조회 에러:", e);
+      }
+    }
+
     if (studentId) {
       const student = get().students.find(s => s.id === studentId);
       set({
@@ -263,6 +295,7 @@ export const useStore = create((set, get) => ({
 
     const collections = [
       { name: 'students', stateKey: 'students' },
+      { name: 'users', stateKey: 'users' },
       { name: 'notices', stateKey: 'notices' },
       { name: 'albums', stateKey: 'albums' },
       { name: 'messages', stateKey: 'messages' },
@@ -648,5 +681,14 @@ export const useStore = create((set, get) => ({
     try {
       await deleteDoc(doc(db, "students", studentId));
     } catch (e) { console.error('학생 삭제 실패:', e); }
+  },
+
+  // 20. 자녀정보 매핑 승인
+  approveStudentMapping: async (userId, studentId) => {
+    try {
+      await updateDoc(doc(db, "users", userId), { studentId });
+    } catch (e) {
+      console.error('자녀 정보 매핑 승인 실패:', e);
+    }
   }
 }));
