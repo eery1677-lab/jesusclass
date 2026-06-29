@@ -107,57 +107,54 @@ export default function Login() {
             </p>
           </div>
 
+          <style>{`
+            .role-card {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              padding: 18px 20px;
+              background: #ffffff !important;
+              border: 1.5px solid #e2e8f0 !important;
+              border-radius: 16px !important;
+              cursor: pointer;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              color: #1e293b !important;
+              width: 100%;
+              box-sizing: border-box;
+              text-align: left;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+              -webkit-tap-highlight-color: transparent;
+              outline: none;
+            }
+            .role-card:hover {
+              transform: translateY(-5px);
+            }
+            .role-card:active {
+              transform: translateY(-2px);
+            }
+            .role-card.teacher-card:hover, .role-card.teacher-card:active {
+              border-color: #10B981 !important;
+              background: rgba(16, 185, 129, 0.05) !important;
+              box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(16, 185, 129, 0.05) !important;
+            }
+            .role-card.parent-card:hover, .role-card.parent-card:active {
+              border-color: #F59E0B !important;
+              background: rgba(245, 158, 11, 0.05) !important;
+              box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.15), 0 4px 6px -2px rgba(245, 158, 11, 0.05) !important;
+            }
+          `}</style>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
             <button
               type="button"
               onClick={() => handleSelectRole('teacher')}
               disabled={isLoading}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '16px 20px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                color: 'var(--text-main)',
-                width: '100%',
-                boxSizing: 'border-box',
-                textAlign: 'left',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              }}
-              onTouchStart={e => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
-              }}
-              onTouchEnd={e => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              }}
+              className="role-card teacher-card"
             >
               <span style={{ fontSize: '2.2rem', userSelect: 'none' }}>👩‍🏫</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <strong style={{ fontSize: '1rem', fontWeight: 700 }}>교사로 시작하기</strong>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.3, wordBreak: 'keep-all' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.3, wordBreak: 'keep-all' }}>
                   학생 관리, 알림장·앨범·달란트 운영
                 </span>
               </div>
@@ -167,52 +164,12 @@ export default function Login() {
               type="button"
               onClick={() => handleSelectRole('parent')}
               disabled={isLoading}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '16px 20px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                color: 'var(--text-main)',
-                width: '100%',
-                boxSizing: 'border-box',
-                textAlign: 'left',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              }}
-              onTouchStart={e => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
-              }}
-              onTouchEnd={e => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-              }}
+              className="role-card parent-card"
             >
               <span style={{ fontSize: '2.2rem', userSelect: 'none' }}>🙋</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <strong style={{ fontSize: '1rem', fontWeight: 700 }}>학부모 / 학생으로 시작하기</strong>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.3, wordBreak: 'keep-all' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.3, wordBreak: 'keep-all' }}>
                   주보 확인, 알림장 열람, 1:1 소통 톡
                 </span>
               </div>
