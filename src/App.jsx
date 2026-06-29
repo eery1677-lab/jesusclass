@@ -115,7 +115,7 @@ function AppContent() {
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || !currentUser.role) {
     return <Login />;
   }
 

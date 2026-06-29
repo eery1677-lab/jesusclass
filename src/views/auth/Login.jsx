@@ -61,6 +61,110 @@ export default function Login() {
     }
   };
 
+  const { currentUser, selectRole, logout } = useStore();
+
+  const handleSelectRole = async (role) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      await selectRole(role);
+    } catch (err) {
+      setError('역할 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 역할 선택 UI 분기 추가
+  if (currentUser && currentUser.needsRoleSelection) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card} className="card-solid animate-fade-in hover-lift">
+          <div style={styles.header}>
+            <div style={styles.logoCircle}>
+              <span style={{ fontSize: '2rem' }}>👤</span>
+            </div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 8px', color: 'var(--text-main)' }}>어떤 역할로 이용하시나요?</h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6, margin: '0 0 28px' }}>
+              <strong>{currentUser.name || currentUser.email}</strong> 님, 환영합니다!<br />
+              역할을 선택하시면 다음부터는 자동으로 로그인됩니다.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
+            <button
+              onClick={() => handleSelectRole('teacher')}
+              disabled={isLoading}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '24px 16px',
+                background: 'var(--bg-main)',
+                border: '2px solid var(--border-color)',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s ease',
+                color: 'var(--text-main)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <span style={{ fontSize: '2.5rem' }}>👩‍🏫</span>
+              <strong style={{ fontSize: '1rem', fontWeight: 700 }}>교사</strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+                학생 관리, 알림장·앨범·달란트 운영
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleSelectRole('parent')}
+              disabled={isLoading}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '24px 16px',
+                background: 'var(--bg-main)',
+                border: '2px solid var(--border-color)',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s ease',
+                color: 'var(--text-main)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <span style={{ fontSize: '2.5rem' }}>🙋</span>
+              <strong style={{ fontSize: '1rem', fontWeight: 700 }}>학부모 / 학생</strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+                주보 확인, 알림장 열람, 1:1 톡
+              </span>
+            </button>
+          </div>
+
+          {error && (
+            <div style={{ ...styles.errorBox, marginTop: '20px', marginBottom: 0 }}>
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button 
+            onClick={logout}
+            style={{...styles.googleBtn, border: 'none', marginTop: '24px', background: 'transparent', color: 'var(--text-muted)'}}
+          >
+            취소하고 로그아웃
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.card} className="card-solid animate-fade-in hover-lift">

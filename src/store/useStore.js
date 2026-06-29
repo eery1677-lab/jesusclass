@@ -184,6 +184,34 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // 역할 선택 (최초 1회)
+  selectRole: async (role) => {
+    const user = get().currentUser;
+    if (!user) return;
+    
+    const userData = {
+      role: role,
+      name: user.name || '사용자',
+      email: user.email || '',
+      createdAt: new Date().toISOString(),
+    };
+    
+    try {
+      await setDoc(doc(db, 'users', user.uid), userData);
+      set({
+        currentUser: {
+          ...user,
+          role: role,
+          mode: role === 'teacher' ? 'teacher' : 'parent',
+          needsRoleSelection: false
+        }
+      });
+    } catch (e) {
+      console.error('역할 저장 실패:', e);
+      throw e;
+    }
+  },
+
   // 로그아웃
   logout: async () => {
     try {
@@ -202,39 +230,9 @@ export const useStore = create((set, get) => ({
     // Firebase 인증 상태 리스너
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const isTeacherEmail = user.email === 'eery1677@gmail.com' || user.email === 'eery1767@gmail.com';
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         
-        if (isTeacherEmail) {
-          const defaultName = userDoc.exists() ? (userDoc.data().name || user.displayName || '박사랑 선생님') : (user.displayName || '박사랑 선생님');
-          const teacherData = {
-            role: 'teacher',
-            name: defaultName,
-            email: user.email || '',
-            createdAt: userDoc.exists() ? (userDoc.data().createdAt || new Date().toISOString()) : new Date().toISOString()
-          };
-          
-          if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
-            try {
-              await setDoc(doc(db, 'users', user.uid), teacherData);
-            } catch (e) {
-              console.error('교사 권한 강제 업데이트 실패:', e);
-            }
-          }
-          
-          set({ 
-            currentUser: { 
-              uid: user.uid, 
-              email: user.email,
-              name: defaultName,
-              role: 'teacher', 
-              id: null,
-              mode: 'teacher',
-              isChildDirectLogin: false
-            },
-            authLoading: false
-          });
-        } else if (userDoc.exists()) {
+        if (userDoc.exists()) {
           const userData = userDoc.data();
           set({ 
             currentUser: { 
@@ -249,32 +247,17 @@ export const useStore = create((set, get) => ({
             authLoading: false
           });
         } else {
-          // 권한 정보가 없으면 신규 가입자이므로 자동 가입 처리
-          const defaultRole = 'parent';
-          const defaultName = user.displayName || '학부모님';
-          
-          const userData = {
-            role: defaultRole,
-            name: defaultName,
-            email: user.email || '',
-            createdAt: new Date().toISOString()
-          };
-          
-          try {
-            await setDoc(doc(db, 'users', user.uid), userData);
-          } catch (e) {
-            console.error('신규 가입 사용자 DB 저장 실패:', e);
-          }
-
+          // 권한 정보가 전혀 없는 신규 가입자! (eery1677@gmail.com 도 처음 가입/로그인 시 여기에 진입합니다.)
           set({ 
             currentUser: { 
               uid: user.uid, 
               email: user.email,
-              name: defaultName,
-              role: defaultRole, 
+              name: user.displayName || '신규 사용자',
+              role: null,
               id: null,
-              mode: 'parent',
-              isChildDirectLogin: false
+              mode: null,
+              isChildDirectLogin: false,
+              needsRoleSelection: true
             },
             authLoading: false
           });

@@ -57,7 +57,7 @@ async function startGitFlow() {
     }
 
     await runGitCommand(['add', '.']);
-    await runGitCommand(['commit', '-m', '"feat: 구글 애드몹 연동 및 배포 릴리즈 준비 완료"']);
+    await runGitCommand(['commit', '-m', '"Fix: 회원 가입 역할 선택 UI 연동 및 레거시 제거"']);
     console.log("⛪ 원격 깃허브 저장소로 코드를 전송합니다...");
     await runGitCommand(['push', '-u', 'origin', 'main']);
     console.log("✨ 깃허브 저장 및 업로드가 완전히 성공했습니다!");
