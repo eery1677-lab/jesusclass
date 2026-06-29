@@ -75,75 +75,147 @@ export default function Login() {
     }
   };
 
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await logout();
+      setEmail('');
+      setPassword('');
+      setError('');
+    } catch (err) {
+      console.error('로그아웃 에러:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 역할 선택 UI 분기 추가
   if (currentUser && currentUser.needsRoleSelection) {
     return (
       <div style={styles.container}>
-        <div style={styles.card} className="card-solid animate-fade-in hover-lift">
+        <div style={{ ...styles.card, padding: '32px 20px', maxWidth: '380px' }} className="card-solid animate-fade-in">
           <div style={styles.header}>
             <div style={styles.logoCircle}>
-              <span style={{ fontSize: '2rem' }}>👤</span>
+              <span style={{ fontSize: '1.8rem' }}>👤</span>
             </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 8px', color: 'var(--text-main)' }}>어떤 역할로 이용하시나요?</h2>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6, margin: '0 0 28px' }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 10px', color: 'var(--text-main)', wordBreak: 'keep-all' }}>
+              어떤 역할로 이용하시나요?
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, margin: '0 0 24px', wordBreak: 'keep-all' }}>
               <strong>{currentUser.name || currentUser.email}</strong> 님, 환영합니다!<br />
-              역할을 선택하시면 다음부터는 자동으로 로그인됩니다.
+              역할을 선택하시면 다음부터 자동으로 로그인됩니다.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
             <button
+              type="button"
               onClick={() => handleSelectRole('teacher')}
               disabled={isLoading}
               style={{
-                flex: 1,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '24px 16px',
-                background: 'var(--bg-main)',
-                border: '2px solid var(--border-color)',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1.5px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '16px',
                 cursor: 'pointer',
-                transition: 'border-color 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 color: 'var(--text-main)',
+                width: '100%',
+                boxSizing: 'border-box',
+                textAlign: 'left',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                WebkitTapHighlightColor: 'transparent'
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }}
+              onTouchStart={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
+              }}
+              onTouchEnd={e => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }}
             >
-              <span style={{ fontSize: '2.5rem' }}>👩‍🏫</span>
-              <strong style={{ fontSize: '1rem', fontWeight: 700 }}>교사</strong>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
-                학생 관리, 알림장·앨범·달란트 운영
-              </span>
+              <span style={{ fontSize: '2.2rem', userSelect: 'none' }}>👩‍🏫</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <strong style={{ fontSize: '1rem', fontWeight: 700 }}>교사로 시작하기</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.3, wordBreak: 'keep-all' }}>
+                  학생 관리, 알림장·앨범·달란트 운영
+                </span>
+              </div>
             </button>
 
             <button
+              type="button"
               onClick={() => handleSelectRole('parent')}
               disabled={isLoading}
               style={{
-                flex: 1,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '24px 16px',
-                background: 'var(--bg-main)',
-                border: '2px solid var(--border-color)',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1.5px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '16px',
                 cursor: 'pointer',
-                transition: 'border-color 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 color: 'var(--text-main)',
+                width: '100%',
+                boxSizing: 'border-box',
+                textAlign: 'left',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                WebkitTapHighlightColor: 'transparent'
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }}
+              onTouchStart={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                e.currentTarget.style.boxShadow = '0 12px 20px -3px rgba(16, 185, 129, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
+              }}
+              onTouchEnd={e => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+              }}
             >
-              <span style={{ fontSize: '2.5rem' }}>🙋</span>
-              <strong style={{ fontSize: '1rem', fontWeight: 700 }}>학부모 / 학생</strong>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
-                주보 확인, 알림장 열람, 1:1 톡
-              </span>
+              <span style={{ fontSize: '2.2rem', userSelect: 'none' }}>🙋</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <strong style={{ fontSize: '1rem', fontWeight: 700 }}>학부모 / 학생으로 시작하기</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.3, wordBreak: 'keep-all' }}>
+                  주보 확인, 알림장 열람, 1:1 소통 톡
+                </span>
+              </div>
             </button>
           </div>
 
@@ -155,8 +227,9 @@ export default function Login() {
           )}
 
           <button 
-            onClick={logout}
-            style={{...styles.googleBtn, border: 'none', marginTop: '24px', background: 'transparent', color: 'var(--text-muted)'}}
+            type="button"
+            onClick={handleLogout}
+            style={{...styles.googleBtn, border: 'none', marginTop: '20px', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.85rem'}}
           >
             취소하고 로그아웃
           </button>

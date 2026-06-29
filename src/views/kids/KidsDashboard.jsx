@@ -105,9 +105,8 @@ export default function KidsDashboard({ setActiveTab }) {
 
         <button 
           onClick={async () => {
-            const { signOut } = await import('firebase/auth');
-            const { auth } = await import('../../firebase');
-            await signOut(auth);
+            const { logout } = useStore.getState();
+            await logout();
           }}
           style={{ 
             padding: '12px 32px', 

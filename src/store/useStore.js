@@ -202,6 +202,7 @@ export const useStore = create((set, get) => ({
         currentUser: {
           ...user,
           role: role,
+          id: null,
           mode: role === 'teacher' ? 'teacher' : 'parent',
           needsRoleSelection: false
         }

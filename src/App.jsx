@@ -38,10 +38,10 @@ function AppContent() {
   // currentUser가 로드될 때마다 (role이 확정될 때) 올바른 탭으로 이동
   // currentUser.uid를 사용 — 교사는 id가 null이므로 uid 기준으로 추적
   useEffect(() => {
-    if (currentUser && currentUser.role) {
+    if (currentUser && currentUser.role && !currentUser.needsRoleSelection) {
       setActiveTab(currentUser.role === 'teacher' ? 'teacher-dashboard' : 'kids-dashboard');
     }
-  }, [currentUser?.uid, currentUser?.role]);
+  }, [currentUser?.uid, currentUser?.role, currentUser?.needsRoleSelection]);
   
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [hasShownInitialAd, setHasShownInitialAd] = useState(false);
@@ -115,7 +115,7 @@ function AppContent() {
     );
   }
 
-  if (!currentUser || !currentUser.role) {
+  if (!currentUser || !currentUser.role || currentUser.needsRoleSelection) {
     return <Login />;
   }
 

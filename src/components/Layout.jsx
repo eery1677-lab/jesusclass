@@ -275,7 +275,8 @@ export default function Layout({ children, activeTab, setActiveTab, onOpenChat }
               </div>
               <button style={styles.logoutBtn} onClick={async () => { 
                 if (window.confirm('정말 로그아웃 하시겠습니까?')) {
-                  await signOut();
+                  const { logout } = useStore.getState();
+                  await logout();
                   setMoreMenuOpen(false);
                 }
               }}>
