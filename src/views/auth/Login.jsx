@@ -65,14 +65,14 @@ export default function Login() {
     }
   };
 
+  const { currentUser, selectRole, logout } = useStore();
+
   // 역할 선택 UI 진입 시 로딩 상태 강제 해제 (안전 장치)
   React.useEffect(() => {
     if (currentUser && currentUser.needsRoleSelection) {
       setIsLoading(false);
     }
   }, [currentUser?.needsRoleSelection]);
-
-  const { currentUser, selectRole, logout } = useStore();
 
   const handleSelectRole = async (role) => {
     setIsLoading(true);
