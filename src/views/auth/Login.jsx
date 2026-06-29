@@ -40,6 +40,7 @@ export default function Login() {
       await loginWithGoogle();
     } catch (err) {
       setError('구글 로그인 중 오류가 발생했습니다.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -54,12 +55,22 @@ export default function Login() {
     setIsLoading(true);
     setError('');
     
-    const success = await loginWithChildCode(childCode);
-    if (!success) {
-      setError('유효하지 않은 코드입니다. 코드를 다시 확인해주세요.');
+    try {
+      const success = await loginWithChildCode(childCode);
+      if (!success) {
+        setError('유효하지 않은 코드입니다. 코드를 다시 확인해주세요.');
+      }
+    } finally {
       setIsLoading(false);
     }
   };
+
+  // 역할 선택 UI 진입 시 로딩 상태 강제 해제 (안전 장치)
+  React.useEffect(() => {
+    if (currentUser && currentUser.needsRoleSelection) {
+      setIsLoading(false);
+    }
+  }, [currentUser?.needsRoleSelection]);
 
   const { currentUser, selectRole, logout } = useStore();
 
